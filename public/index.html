@@ -1,0 +1,204 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Blue Duck Christmas Lights</title>
+  <link rel="icon" href="blue-duck-logo.png" />
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <header>
+    <img class="logo" src="blue-duck-logo.png" alt="Blue Duck Christmas Lights" />
+    <h1>See Your Home Lit Up for the Holidays</h1>
+    <p>Upload a photo of your home and get a free, instant preview of your custom light design — no obligation.</p>
+    <p class="header-promo" id="headerPromo" hidden>🎉 New residential clients: Sign up today and save 50% on your first year.</p>
+  </header>
+
+  <main>
+    <section class="gate-panel" id="gatePanel">
+      <h2>Enter Your ZIP Code to Get Started</h2>
+      <p class="gate-copy">Blue Duck Christmas Lights currently serves the greater Indianapolis area.</p>
+
+      <div class="gate-zip">
+        <div class="gate-zip-row">
+          <input type="text" id="zipInput" inputmode="numeric" maxlength="5" placeholder="46032" autofocus />
+          <button id="zipSubmitBtn">Check My Area</button>
+        </div>
+      </div>
+
+      <p id="gateMsg" class="gate-msg"></p>
+    </section>
+
+    <section class="gate-panel" id="propertyTypePanel" hidden>
+      <h2>Is This For a Residential Home or a Commercial Building?</h2>
+      <p class="gate-copy">
+        This free instant preview tool is built for residential homes. Commercial properties are custom-designed
+        after a site visit.
+      </p>
+      <div class="approval-actions">
+        <button type="button" id="residentialBtn">🏠 Residential</button>
+        <button type="button" id="commercialBtn" class="secondary">🏢 Commercial</button>
+      </div>
+    </section>
+
+    <section class="gate-panel" id="commercialPanel" hidden>
+      <p class="gate-copy commercial-intro">
+        You were probably hoping to see your property professionally designed using our visualization tool.
+        Commercial lighting projects are much more complex because electrical requirements, building layout,
+        access, installation limitations, and other site-specific considerations need to be evaluated. To create
+        an accurate design, our team first needs to perform a site visit.
+      </p>
+      <h2>Schedule Your Commercial Consultation / Site Visit</h2>
+
+      <form id="commercialForm" class="lead-form">
+        <div class="field">
+          <label for="commName">Full name</label>
+          <input type="text" id="commName" autocomplete="name" required />
+        </div>
+        <div class="field">
+          <label for="commAddress">Business / site address</label>
+          <input type="text" id="commAddress" autocomplete="street-address" required />
+        </div>
+        <div class="field">
+          <label for="commPhone">Phone number</label>
+          <input type="tel" id="commPhone" autocomplete="tel" required />
+        </div>
+        <div class="field">
+          <label for="commEmail">Email address</label>
+          <input type="email" id="commEmail" autocomplete="email" required />
+        </div>
+
+        <button type="submit" id="commSubmitBtn">📅 Request a Consultation</button>
+        <p id="commMsg" class="gate-msg"></p>
+      </form>
+    </section>
+
+    <div id="appContent" hidden>
+      <section class="controls">
+        <label class="upload-box" id="uploadBox">
+          <input type="file" id="fileInput" accept="image/*" hidden />
+          <span id="uploadLabel">📸 Click to upload a photo of your home</span>
+        </label>
+
+        <button id="generateBtn" disabled>✨ Show Me Every Style</button>
+        <p id="statusMsg" class="status"></p>
+      </section>
+
+      <img id="originalImg" alt="Original house photo" hidden />
+
+      <section class="style-grid" id="styleGrid"></section>
+
+      <div class="lightbox" id="lightbox" hidden>
+        <div class="lightbox-backdrop" id="lightboxBackdrop"></div>
+        <div class="lightbox-content">
+          <button type="button" class="lightbox-close" id="lightboxClose" aria-label="Close">✕</button>
+          <img id="lightboxImg" alt="" />
+          <p class="lightbox-caption" id="lightboxCaption"></p>
+        </div>
+      </div>
+
+      <section class="approval-panel" id="approvalPanel" hidden>
+        <h2>Do You Love This Design?</h2>
+        <div class="approval-preview">
+          <img id="approvalImg" alt="Your chosen design" />
+        </div>
+        <div class="approval-actions">
+          <button type="button" id="thumbsUpBtn">👍 Yes, I Love It!</button>
+          <button type="button" id="thumbsDownBtn" class="secondary">👎 Let Me Customize It</button>
+        </div>
+        <button type="button" id="backToStylesBtn" class="link-btn">← Choose a Different Design</button>
+      </section>
+
+      <section class="customize-panel" id="customizePanel" hidden>
+        <h2>Customize Your Design</h2>
+        <p class="gate-copy">
+          Click a decoration to add it, drag it into place, and drag the gold corner handle to resize it to fit a
+          window or door. Tap ✕ to remove one.
+        </p>
+
+        <div class="decor-palette">
+          <button type="button" class="decor-add-btn" data-decor="wreath">🎄 Wreath</button>
+          <button type="button" class="decor-add-btn" data-decor="bow">🎀 Bow</button>
+          <button type="button" class="decor-add-btn" data-decor="lights">💡 Extra Lights</button>
+          <button type="button" class="decor-add-btn" data-decor="candycane">🍬 Candy Cane</button>
+        </div>
+
+        <div class="decor-canvas-wrap" id="decorCanvasWrap">
+          <img id="decorBaseImg" alt="Your design" />
+        </div>
+
+        <div class="customize-actions">
+          <button type="button" id="customizeDoneBtn">✅ Looks Good Now</button>
+          <button type="button" id="customizeResetBtn" class="secondary">Clear All</button>
+        </div>
+      </section>
+
+      <section class="package-panel" id="packagePanel" hidden>
+        <h2>Build Your Dream Display</h2>
+        <p class="gate-copy">
+          Here's your home fully lit up. Choose how much of the magic you want — every package starts with a
+          beautifully lit roofline.
+        </p>
+
+        <div class="package-hero">
+          <img id="packageHeroImg" alt="Your dream holiday light display" />
+        </div>
+
+        <div class="package-grid" id="packageGrid"></div>
+
+        <button type="button" id="packageContinueBtn" disabled>Continue →</button>
+        <button type="button" id="backToApprovalBtn" class="link-btn">← Choose a Different Design</button>
+      </section>
+
+      <section class="lead-panel" id="leadPanel" hidden>
+        <div class="promo-banner">
+          <span class="promo-badge">🎉 Limited-Time Offer</span>
+          <h2>50% Off Your First Year</h2>
+          <p class="promo-copy">
+            Sign up today with a <strong>3-year service agreement</strong> and save <strong>50%</strong> on your
+            first year of professional installation and takedown.
+          </p>
+        </div>
+
+        <h3>Claim This Offer for Your Home</h3>
+        <p class="gate-copy">
+          You chose <strong id="chosenStyleLabel"></strong> — <strong id="chosenPackageLabel"></strong>. Tell us
+          where to send your personalized offer.
+        </p>
+
+        <form id="leadForm" class="lead-form">
+          <div class="field">
+            <label for="leadName">Full name</label>
+            <input type="text" id="leadName" autocomplete="name" required />
+          </div>
+          <div class="field">
+            <label for="leadAddress">Home address</label>
+            <input type="text" id="leadAddress" autocomplete="street-address" required />
+          </div>
+          <div class="field">
+            <label for="leadPhone">Phone number</label>
+            <input type="tel" id="leadPhone" autocomplete="tel" required />
+          </div>
+          <div class="field">
+            <label for="leadEmail">Email address</label>
+            <input type="email" id="leadEmail" autocomplete="email" required />
+          </div>
+
+          <button type="submit" id="leadSubmitBtn">🎁 Claim My 50% Off Offer</button>
+          <p id="leadMsg" class="gate-msg"></p>
+        </form>
+
+        <p class="promo-fine-print">
+          *Offer requires a signed 3-year service agreement. Final pricing and terms will be confirmed with your
+          personalized estimate.
+        </p>
+      </section>
+
+      <p class="disclaimer">This is an AI-generated preview to help you visualize your options. Actual installation may vary.</p>
+    </div>
+  </main>
+
+  <script src="app.js"></script>
+</body>
+</html>
