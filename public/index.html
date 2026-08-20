@@ -56,9 +56,10 @@
           <label for="commName">Full name</label>
           <input type="text" id="commName" autocomplete="name" required />
         </div>
-        <div class="field">
+        <div class="field address-field">
           <label for="commAddress">Business / site address</label>
-          <input type="text" id="commAddress" autocomplete="street-address" required />
+          <input type="text" id="commAddress" autocomplete="off" required />
+          <ul class="address-suggestions" id="commAddressSuggestions" hidden></ul>
         </div>
         <div class="field">
           <label for="commPhone">Phone number</label>
@@ -137,12 +138,12 @@
       <section class="package-panel" id="packagePanel" hidden>
         <h2>Build Your Dream Display</h2>
         <p class="gate-copy">
-          Here's your home fully lit up. Choose how much of the magic you want — every package starts with a
-          beautifully lit roofline.
+          This is what's possible with Blue Duck's complete holiday lighting solution. Choose how much of the
+          magic you want — every package starts with a beautifully lit roofline.
         </p>
 
         <div class="package-hero">
-          <img id="packageHeroImg" alt="Your dream holiday light display" />
+          <img id="packageHeroImg" alt="Example of a complete Blue Duck holiday lighting display" />
         </div>
 
         <div class="package-grid" id="packageGrid"></div>
@@ -172,9 +173,16 @@
             <label for="leadName">Full name</label>
             <input type="text" id="leadName" autocomplete="name" required />
           </div>
-          <div class="field">
-            <label for="leadAddress">Home address</label>
-            <input type="text" id="leadAddress" autocomplete="street-address" required />
+          <div class="field address-field">
+            <label for="leadAddress">Street address, city, state, ZIP code</label>
+            <input
+              type="text"
+              id="leadAddress"
+              autocomplete="off"
+              placeholder="123 Main Street, Carmel, IN 46032"
+              required
+            />
+            <ul class="address-suggestions" id="leadAddressSuggestions" hidden></ul>
           </div>
           <div class="field">
             <label for="leadPhone">Phone number</label>

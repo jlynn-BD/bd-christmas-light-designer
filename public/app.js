@@ -57,6 +57,96 @@ const leadEmail = document.getElementById("leadEmail");
 const leadSubmitBtn = document.getElementById("leadSubmitBtn");
 const leadMsg = document.getElementById("leadMsg");
 
+function setupAddressAutocomplete(inputEl, listEl) {
+  let debounceTimer = null;
+  let activeController = null;
+  let activeIndex = -1;
+
+  inputEl.addEventListener("input", () => {
+    clearTimeout(debounceTimer);
+    const query = inputEl.value.trim();
+    activeIndex = -1;
+
+    if (query.length < 4) {
+      hideSuggestions();
+      return;
+    }
+
+    debounceTimer = setTimeout(() => fetchSuggestions(query), 400);
+  });
+
+  inputEl.addEventListener("keydown", (e) => {
+    const items = Array.from(listEl.querySelectorAll("li"));
+    if (listEl.hidden || items.length === 0) return;
+
+    if (e.key === "ArrowDown") {
+      e.preventDefault();
+      activeIndex = Math.min(activeIndex + 1, items.length - 1);
+      highlightActive(items);
+    } else if (e.key === "ArrowUp") {
+      e.preventDefault();
+      activeIndex = Math.max(activeIndex - 1, 0);
+      highlightActive(items);
+    } else if (e.key === "Enter" && activeIndex >= 0) {
+      e.preventDefault();
+      items[activeIndex].click();
+    } else if (e.key === "Escape") {
+      hideSuggestions();
+    }
+  });
+
+  document.addEventListener("click", (e) => {
+    if (e.target !== inputEl && !listEl.contains(e.target)) {
+      hideSuggestions();
+    }
+  });
+
+  function highlightActive(items) {
+    items.forEach((item, i) => item.classList.toggle("active", i === activeIndex));
+  }
+
+  async function fetchSuggestions(query) {
+    if (activeController) activeController.abort();
+    activeController = new AbortController();
+
+    try {
+      const url =
+        "https://nominatim.openstreetmap.org/search?format=json&addressdetails=0&limit=5&countrycodes=us&q=" +
+        encodeURIComponent(query);
+      const res = await fetch(url, { signal: activeController.signal });
+      const results = await res.json();
+      renderSuggestions(results);
+    } catch (err) {
+      if (err.name !== "AbortError") hideSuggestions();
+    }
+  }
+
+  function renderSuggestions(results) {
+    listEl.innerHTML = "";
+    if (!Array.isArray(results) || results.length === 0) {
+      hideSuggestions();
+      return;
+    }
+
+    for (const result of results) {
+      const li = document.createElement("li");
+      li.textContent = result.display_name;
+      li.addEventListener("click", () => {
+        inputEl.value = result.display_name;
+        hideSuggestions();
+      });
+      listEl.appendChild(li);
+    }
+    listEl.hidden = false;
+  }
+
+  function hideSuggestions() {
+    listEl.hidden = true;
+    listEl.innerHTML = "";
+    activeIndex = -1;
+  }
+}
+
 const approvalPanel = document.getElementById("approvalPanel");
 const approvalImg = document.getElementById("approvalImg");
 const thumbsUpBtn = document.getElementById("thumbsUpBtn");
@@ -100,7 +190,7 @@ const PACKAGES = [
     key: "package4",
     name: "Clark Griswold Package",
     subtitle: null,
-    features: ["Roofline", "Wreath", "Trees", "Sidewalk/Driveway Lights"],
+    features: ["Roofline", "Wreath", "Trees", "Driveway Stake Lighting", "Sidewalk Stake Lighting"],
   },
 ];
 
@@ -238,7 +328,10 @@ commercialForm.addEventListener("submit", async (e) => {
     if (!res.ok) throw new Error(data.error || "Failed to submit your request.");
 
     commercialForm.hidden = true;
-    setCommMsg("🎉 Thanks! Our team will reach out soon to schedule your consultation.");
+    setCommMsg(
+      "🎉 Thank you! Your information has been submitted. A member of the Blue Duck Christmas Lights team " +
+        "will contact you shortly to schedule your consultation."
+    );
   } catch (err) {
     setCommMsg(err.message, true);
   } finally {
@@ -346,7 +439,7 @@ backToStylesBtn.addEventListener("click", () => {
 function openPackagePanel() {
   chosenPackage = null;
   packageContinueBtn.disabled = true;
-  packageHeroImg.src = chosenStyle.image;
+  packageHeroImg.src = "dream-display.png";
   renderPackageCards();
   packagePanel.hidden = false;
   packagePanel.scrollIntoView({ behavior: "smooth", block: "start" });
@@ -625,7 +718,10 @@ leadForm.addEventListener("submit", async (e) => {
     if (!res.ok) throw new Error(data.error || "Failed to submit your request.");
 
     leadForm.hidden = true;
-    setLeadMsg("🎉 Thanks! Our team will reach out soon to lock in your 50% off first-year offer.");
+    setLeadMsg(
+      "🎉 Thank you! Your information has been submitted. A member of the Blue Duck Christmas Lights team " +
+        "will contact you shortly to lock in your 50% off first-year offer."
+    );
   } catch (err) {
     setLeadMsg(err.message, true);
   } finally {
@@ -715,3 +811,6 @@ function setStatus(message, isError = false) {
 }
 
 loadStyles();
+
+setupAddressAutocomplete(leadAddress, document.getElementById("leadAddressSuggestions"));
+setupAddressAutocomplete(commAddress, document.getElementById("commAddressSuggestions"));

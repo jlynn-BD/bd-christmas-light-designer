@@ -77,8 +77,11 @@ const STYLES = [
     key: "red_white",
     label: "Red and White",
     description:
-      "large C9 bulbs in a strict repeating White, Red, White, Red pattern — " +
-      "both colors must be clearly and equally visible along every strand, not just red",
+      "large C9 bulbs in a strict repeating pattern of PAIRS: two white bulbs next to each other, then two " +
+      "red bulbs next to each other, then two white bulbs, then two red bulbs, continuously repeating in " +
+      "groups of two (white, white, red, red, white, white, red, red...). Do NOT single-alternate one white " +
+      "then one red — the bulbs must be grouped in same-color pairs, and both colors must be clearly and " +
+      "equally visible along every strand, not just red",
   },
   {
     key: "red_green_white",
@@ -99,11 +102,13 @@ function buildPrompt(lightDescription) {
   return (
     `Edit this photo of a house to add ${lightDescription} for Christmas, installed exactly the way a ` +
     "professional residential Christmas light company installs a standard roofline (C9 gutter-line) package. " +
-    "ONLY add lights along the gutter line / eave edge of the roof — the lower edge where the fascia and " +
-    "gutter are mounted, which is the only edge a lighting crew can physically clip C9 bulbs to from a ladder. " +
-    "Cover the ENTIRE gutter line of the house — every gable, every roof section, and the full length of every " +
-    "eave visible in the photo. Do not light only one section (such as just the porch roof) while leaving other " +
-    "visible roof sections dark; a real installation crew lights the whole house, not one section of it. " +
+    "ONLY add lights along the gutter line / eave edge of the MAIN house roofline — the lower edge of the " +
+    "primary structure's gables and dormers, where the fascia and gutter are mounted, which is the only edge " +
+    "a lighting crew can physically clip C9 bulbs to from a ladder. " +
+    "Cover the ENTIRE main roofline of the house — every gable and dormer of the primary structure, and the " +
+    "full length of every eave along those main roof sections visible in the photo. Do not light only one " +
+    "gable while leaving other main roof sections dark; a real installation crew lights the entire main " +
+    "roofline, not just one section of it. " +
     "This includes both flat horizontal runs of gutter AND sloped/raked sections that follow a gable edge " +
     "diagonally up toward its peak — both count as legitimate gutter line as long as they are the LOWER roof " +
     "edge (where roof meets wall or fascia), not the upper edge. " +
@@ -112,6 +117,16 @@ function buildPrompt(lightDescription) {
     "Every single bulb must sit on a real, continuous gutter/eave edge that is clearly visible in the photo. " +
     "If you are not certain an edge is the gutter line, leave it unlit. " +
     "\n\nDo NOT add lights anywhere else. This is a strict list of what to leave completely unlit:\n" +
+    "- Do NOT add lights to the roof overhang directly above a garage door — the garage roofline must stay " +
+    "completely unlit, even though the main house roofline next to it is lit.\n" +
+    "- Do NOT add lights to a porch roof, covered entryway, or entry overhang — only the main house roofline " +
+    "(the gables and dormers of the primary structure) gets lit, never the porch or entry roof. " +
+    "IMPORTANT: on houses with a covered porch, there are usually TWO separate gutter lines stacked at " +
+    "different heights — a LOWER one running along the top of the porch support columns/posts (this is the " +
+    "porch roofline), and a HIGHER one above it at the main roof eave (this is the main roofline). Only light " +
+    "the HIGHER, main-roof gutter line. If you find yourself about to light an edge that runs directly above a " +
+    "row of porch columns, stop — that is the porch roofline, and it must stay unlit even though the main " +
+    "roofline right above it is lit.\n" +
     "- Do NOT outline windows or window frames.\n" +
     "- Do NOT run lights down gutter downspouts or any vertical drainpipe.\n" +
     "- Do NOT outline the front door or any door frame.\n" +
@@ -119,7 +134,7 @@ function buildPrompt(lightDescription) {
     "- Do NOT add lights to trees.\n" +
     "- Do NOT add lights to bushes, hedges, or other landscaping.\n" +
     "- Do NOT add lights along the sidewalk, driveway, walkway, or as ground stakes.\n" +
-    "- Do NOT add any lights that are not directly on the roofline.\n\n" +
+    "- Do NOT add any lights that are not directly on the main house roofline.\n\n" +
     "\n\nBulb size and spacing are critical — this must read as real, individually-installed C9 bulbs, not a " +
     "glowing LED strip or rope light:\n" +
     "- Render each bulb as a large, distinct, individually-shaped C9 bulb (the classic large oval Christmas " +
@@ -130,10 +145,14 @@ function buildPrompt(lightDescription) {
     "line between adjacent bulbs. Do NOT render a continuous glowing line, blurred strip, or rope light where " +
     "individual bulbs are not distinguishable.\n" +
     "- When colors alternate, each bulb must be a single, crisp, visually distinct color — for example a clean " +
-    "white bulb directly next to a clean red bulb — never a blended or gradient color between two bulbs.\n\n" +
+    "white bulb directly next to a clean red bulb — never a blended or gradient color between two bulbs.\n" +
+    "- Each bulb should be bright, saturated, and glossy, like a real illuminated glass C9 bulb — not dull, " +
+    "washed out, pastel, or low-contrast against the house. The colors should pop clearly against the roofline, " +
+    "the way they do in real professional installation photos taken at night.\n\n" +
     "Give each bulb a realistic warm glow and subtle light bloom, as if photographed at dusk or early evening, " +
-    "but keep the glow subtle enough that the individual bulb shapes, spacing, and colors described above " +
-    "remain clearly visible. " +
+    "but keep the glow tight and contained around each bulb — it must not spread so far that it washes out the " +
+    "bulb's color or merges it with neighboring bulbs. Individual bulb shapes, spacing, and colors must stay " +
+    "crisp and clearly readable, not soft, hazy, or blurred. " +
     "Keep the house structure, landscaping, background, and camera angle exactly the same — only add the " +
     "roofline lights themselves and a natural dusk-toned sky if the original photo was taken in daylight. " +
     "Do not add snow, decorations other than the roofline lights, or text of any kind. " +

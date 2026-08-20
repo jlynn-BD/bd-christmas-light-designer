@@ -195,6 +195,40 @@ button.secondary {
   color: var(--muted);
 }
 
+.address-field {
+  position: relative;
+}
+
+.address-suggestions {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  z-index: 20;
+  margin: 0.25rem 0 0;
+  padding: 0.25rem;
+  list-style: none;
+  background: #0f2452;
+  border: 1px solid var(--muted);
+  border-radius: 8px;
+  max-height: 220px;
+  overflow-y: auto;
+}
+
+.address-suggestions li {
+  padding: 0.5rem 0.6rem;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 0.9rem;
+  color: var(--text);
+}
+
+.address-suggestions li:hover,
+.address-suggestions li.active {
+  background: var(--accent-2);
+  color: var(--accent-2-text);
+}
+
 select,
 button {
   font-size: 1rem;
