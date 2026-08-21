@@ -63,12 +63,12 @@ function isZipInServiceArea(zip) {
 const CURRENT_OFFER = "50% off Year 1 installation with a signed 3-year service agreement";
 
 const STYLES = [
-  { key: "warm_white", label: "Warm White", description: "warm white (soft yellowish) large C9 bulbs" },
+  { key: "warm_white", label: "Warm White", description: "warm white (soft yellowish) C9 bulbs" },
   {
     key: "multicolor",
     label: "Multicolored",
     description:
-      "large C9 bulbs in a strict repeating four-bulb sequence: one red bulb, then one green bulb, then one " +
+      "C9 bulbs in a strict repeating four-bulb sequence: one red bulb, then one green bulb, then one " +
       "blue bulb, then one gold/yellow bulb, continuously repeating in that exact order along the entire " +
       "strand. All four colors must be clearly, vividly visible in equal proportion — do not let red or any " +
       "single color dominate, and do not let any color fade out, blend together, or go missing",
@@ -77,7 +77,7 @@ const STYLES = [
     key: "red_white",
     label: "Red and White",
     description:
-      "large C9 bulbs in a strict repeating pattern of PAIRS: two white bulbs next to each other, then two " +
+      "C9 bulbs in a strict repeating pattern of PAIRS: two white bulbs next to each other, then two " +
       "red bulbs next to each other, then two white bulbs, then two red bulbs, continuously repeating in " +
       "groups of two (white, white, red, red, white, white, red, red...). Do NOT single-alternate one white " +
       "then one red — the bulbs must be grouped in same-color pairs, and both colors must be clearly and " +
@@ -87,7 +87,7 @@ const STYLES = [
     key: "red_green_white",
     label: "Red, Green and White",
     description:
-      "large C9 bulbs in a strict repeating three-bulb sequence: one red bulb, then one green bulb, then " +
+      "C9 bulbs in a strict repeating three-bulb sequence: one red bulb, then one green bulb, then " +
       "one white bulb, continuously repeating. Exactly one-third of all bulbs must be red, one-third must be " +
       "green, and one-third must be white. The green bulbs are the most important to get right — they must be " +
       "clearly, vividly visible throughout every strand, not sparse, not faint, and not outnumbered by the red " +
@@ -103,8 +103,7 @@ function buildPrompt(lightDescription) {
     `Edit this photo of a house to add ${lightDescription} for Christmas, installed exactly the way a ` +
     "professional residential Christmas light company installs a standard roofline (C9 gutter-line) package. " +
     "ONLY add lights along the gutter line / eave edge of the MAIN house roofline — the lower edge of the " +
-    "primary structure's gables and dormers, where the fascia and gutter are mounted, which is the only edge " +
-    "a lighting crew can physically clip C9 bulbs to from a ladder. " +
+    "primary structure's gables and dormers, where the fascia and gutter are mounted. " +
     "Cover the ENTIRE main roofline of the house — every gable and dormer of the primary structure, and the " +
     "full length of every eave along those main roof sections visible in the photo. Do not light only one " +
     "gable while leaving other main roof sections dark; a real installation crew lights the entire main " +
@@ -135,24 +134,8 @@ function buildPrompt(lightDescription) {
     "- Do NOT add lights to bushes, hedges, or other landscaping.\n" +
     "- Do NOT add lights along the sidewalk, driveway, walkway, or as ground stakes.\n" +
     "- Do NOT add any lights that are not directly on the main house roofline.\n\n" +
-    "\n\nBulb size and spacing are critical — this must read as real, individually-installed C9 bulbs, not a " +
-    "glowing LED strip or rope light:\n" +
-    "- Render each bulb as a large, distinct, individually-shaped C9 bulb (the classic large oval Christmas " +
-    "bulb, not a small mini-light).\n" +
-    "- Space the bulbs at consistent intervals of approximately 12 to 15 inches apart, scaled proportionally " +
-    "to the real-world size of the house in the photo.\n" +
-    "- Each bulb must remain visually separate from its neighbors — there must be clearly visible dark gutter " +
-    "line between adjacent bulbs. Do NOT render a continuous glowing line, blurred strip, or rope light where " +
-    "individual bulbs are not distinguishable.\n" +
-    "- When colors alternate, each bulb must be a single, crisp, visually distinct color — for example a clean " +
-    "white bulb directly next to a clean red bulb — never a blended or gradient color between two bulbs.\n" +
-    "- Each bulb should be bright, saturated, and glossy, like a real illuminated glass C9 bulb — not dull, " +
-    "washed out, pastel, or low-contrast against the house. The colors should pop clearly against the roofline, " +
-    "the way they do in real professional installation photos taken at night.\n\n" +
-    "Give each bulb a realistic warm glow and subtle light bloom, as if photographed at dusk or early evening, " +
-    "but keep the glow tight and contained around each bulb — it must not spread so far that it washes out the " +
-    "bulb's color or merges it with neighboring bulbs. Individual bulb shapes, spacing, and colors must stay " +
-    "crisp and clearly readable, not soft, hazy, or blurred. " +
+    "Render the lights as small, individual bulbs, evenly spaced, with a realistic warm glow and subtle light " +
+    "bloom, as if photographed at dusk or early evening. " +
     "Keep the house structure, landscaping, background, and camera angle exactly the same — only add the " +
     "roofline lights themselves and a natural dusk-toned sky if the original photo was taken in daylight. " +
     "Do not add snow, decorations other than the roofline lights, or text of any kind. " +
