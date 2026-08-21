@@ -439,7 +439,7 @@ backToStylesBtn.addEventListener("click", () => {
 function openPackagePanel() {
   chosenPackage = null;
   packageContinueBtn.disabled = true;
-  packageHeroImg.src = chosenStyle.image;
+  packageHeroImg.src = "dream-display.png";
   renderPackageCards();
   packagePanel.hidden = false;
   packagePanel.scrollIntoView({ behavior: "smooth", block: "start" });
