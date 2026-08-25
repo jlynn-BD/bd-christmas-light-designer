@@ -134,10 +134,16 @@ function buildPrompt(lightDescription) {
     "- Do NOT add lights to bushes, hedges, or other landscaping.\n" +
     "- Do NOT add lights along the sidewalk, driveway, walkway, or as ground stakes.\n" +
     "- Do NOT add any lights that are not directly on the main house roofline.\n\n" +
-    "Render the lights as small, individual bulbs, evenly spaced, with a realistic warm glow and subtle light " +
-    "bloom, as if photographed at dusk or early evening. " +
+    "Render the lights as small, individual bulbs, evenly spaced with a visible gap between each bulb — bulbs " +
+    "must not touch, overlap, or blend into a solid strip, tube, or rope-light line of color; every bulb stays " +
+    "individually visible, the same as every other style. " +
+    "Do not apply an overall color tint or filter across the whole photo — each color should be visible only " +
+    "on the bulbs themselves, never as a wash over the house, sky, or landscaping. " +
+    "Give the lights a realistic warm glow and subtle light bloom, as if photographed at night, well after " +
+    "sunset, the way a professional lighting company's portfolio photos look — a dark night sky, not a bright " +
+    "dusk sky, so the warm glow of the bulbs stands out with real contrast. " +
     "Keep the house structure, landscaping, background, and camera angle exactly the same — only add the " +
-    "roofline lights themselves and a natural dusk-toned sky if the original photo was taken in daylight. " +
+    "roofline lights themselves and a natural dark night sky if the original photo was taken in daylight. " +
     "Do not add snow, decorations other than the roofline lights, or text of any kind. " +
     "Output only the edited image — no explanation or caption."
   );
