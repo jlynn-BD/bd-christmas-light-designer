@@ -194,6 +194,43 @@ const PACKAGES = [
   },
 ];
 
+const LOADING_QUOTES = [
+  "🎄 Deck the halls, one bulb at a time.",
+  "✨ 'Tis the season to twinkle bright.",
+  "🎅 Ho ho hold on, magic is loading...",
+  "❄️ Making spirits bright, one string at a time.",
+  "🔔 Jingle all the way to your rooftop.",
+  "🕯️ Warm glows and holiday hopes, coming right up.",
+  "🎁 Good things come to those who wait (and decorate).",
+  "⭐ Hang your lights with care, hopes for magic soon there.",
+  "🦌 Rudolph's guiding your roofline home.",
+  "🍪 Better than a plate of cookies: your dream display.",
+  "🌟 Wishing you a bright and merry preview.",
+  "🎶 Have yourself a merry little wait.",
+];
+
+function randomLoadingQuote() {
+  return LOADING_QUOTES[Math.floor(Math.random() * LOADING_QUOTES.length)];
+}
+
+let loadingQuoteInterval = null;
+
+function startLoadingQuoteRotation() {
+  stopLoadingQuoteRotation();
+  loadingQuoteInterval = setInterval(() => {
+    document.querySelectorAll(".style-placeholder").forEach((el) => {
+      el.textContent = randomLoadingQuote();
+    });
+  }, 4000);
+}
+
+function stopLoadingQuoteRotation() {
+  if (loadingQuoteInterval) {
+    clearInterval(loadingQuoteInterval);
+    loadingQuoteInterval = null;
+  }
+}
+
 let selectedFile = null;
 let styles = [];
 let verifiedZip = null;
@@ -364,8 +401,7 @@ function renderCards(state) {
 
     const placeholder = document.createElement("div");
     placeholder.className = "placeholder style-placeholder";
-    placeholder.textContent =
-      state === "loading" ? "Hanging your lights..." : "Upload a photo to preview this style";
+    placeholder.textContent = state === "loading" ? randomLoadingQuote() : "Upload a photo to preview this style";
     card.appendChild(placeholder);
 
     const img = document.createElement("img");
@@ -770,6 +806,7 @@ generateBtn.addEventListener("click", async () => {
   generateBtn.disabled = true;
   setStatus(`🎄 Hanging your lights in ${styles.length} styles... this can take a minute or two.`);
   renderCards("loading");
+  startLoadingQuoteRotation();
 
   try {
     const formData = new FormData();
@@ -801,6 +838,7 @@ generateBtn.addEventListener("click", async () => {
     setStatus(err.message, true);
     renderCards("idle");
   } finally {
+    stopLoadingQuoteRotation();
     generateBtn.disabled = false;
   }
 });
