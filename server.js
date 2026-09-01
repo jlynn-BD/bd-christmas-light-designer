@@ -87,11 +87,16 @@ const STYLES = [
     key: "red_green_white",
     label: "Red, Green and White",
     description:
-      "C9 bulbs in a strict repeating three-bulb sequence: one red bulb, then one green bulb, then " +
-      "one white bulb, continuously repeating. Exactly one-third of all bulbs must be red, one-third must be " +
-      "green, and one-third must be white. The green bulbs are the most important to get right — they must be " +
-      "clearly, vividly visible throughout every strand, not sparse, not faint, and not outnumbered by the red " +
-      "or white bulbs",
+      "C9 bulbs in a strict repeating THREE-color sequence — red, green, white, red, green, white — " +
+      "repeating continuously along the entire strand. A common mistake is to render this as a two-color " +
+      "red-and-green candy-cane pattern with no white bulbs at all — that is WRONG and unacceptable; white is " +
+      "not optional or decorative here, it is one of the three required colors. Count through every strand in " +
+      "groups of three and assign each bulb in order: 1st bulb red, 2nd bulb green, 3rd bulb white, 4th bulb " +
+      "red, 5th bulb green, 6th bulb white, repeating this exact 1-2-3 count for the entire roofline. The white " +
+      "bulb in each group of three must be just as bright, saturated, and easy to spot as the red and green " +
+      "bulbs — never dim, never skipped, never merged with the roofline or fascia color. Before finishing, " +
+      "check every strand on the house: if any stretch shows only red and green with no white, that stretch is " +
+      "wrong and must be corrected",
   },
 ];
 
