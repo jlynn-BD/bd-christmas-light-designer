@@ -164,6 +164,10 @@ function buildPrompt(lightDescription) {
     "Keep the house structure, landscaping, background, and camera angle exactly the same — only add the " +
     "roofline lights themselves and a natural dark night sky if the original photo was taken in daylight. " +
     "Do not add snow, decorations other than the roofline lights, or text of any kind. " +
+    `\n\nBefore finishing, re-check the bulb color pattern against this exact requirement: ${lightDescription}. ` +
+    "Look at every strand you have drawn and compare it to that requirement. If any strand is missing a " +
+    "required color, uses the wrong ratio, or has silently collapsed into a simpler pattern than what was " +
+    "specified, that is wrong — fix it before finishing. " +
     "Output only the edited image — no explanation or caption."
   );
 }
