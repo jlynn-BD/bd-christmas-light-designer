@@ -77,11 +77,16 @@ const STYLES = [
     key: "red_white",
     label: "Red and White",
     description:
-      "C9 bulbs in a strict repeating pattern of PAIRS: two white bulbs next to each other, then two " +
-      "red bulbs next to each other, then two white bulbs, then two red bulbs, continuously repeating in " +
-      "groups of two (white, white, red, red, white, white, red, red...). Do NOT single-alternate one white " +
-      "then one red — the bulbs must be grouped in same-color pairs, and both colors must be clearly and " +
-      "equally visible along every strand, not just red",
+      "C9 bulbs in a strict repeating pattern of PAIRS: two white bulbs, then two red bulbs, continuously " +
+      "repeating along the entire strand (white, white, red, red, white, white, red, red...). A common " +
+      "mistake is to render this as solid red with no white bulbs at all, or to single-alternate one white " +
+      "then one red instead of grouping in pairs — both are WRONG and unacceptable. White is not optional or " +
+      "decorative here, it is required on every strand in exactly equal amount to red. Count through every " +
+      "strand in groups of four and assign each bulb in order: 1st bulb white, 2nd bulb white, 3rd bulb red, " +
+      "4th bulb red, repeating this exact 1-2-3-4 count for the entire roofline. The white bulbs must be just " +
+      "as bright, saturated, and easy to spot as the red ones — never dim, never skipped, never merged with " +
+      "the roofline or fascia color. Before finishing, check every strand on the house: if any stretch shows " +
+      "only red with no white, that stretch is wrong and must be corrected",
   },
   {
     key: "red_green_white",
