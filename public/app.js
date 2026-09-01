@@ -7,6 +7,30 @@ const statusMsg = document.getElementById("statusMsg");
 const styleGrid = document.getElementById("styleGrid");
 const appContent = document.getElementById("appContent");
 
+const STEP_ORDER = ["design", "confirm", "lighting", "package", "quote"];
+const progressLabel = document.getElementById("progressLabel");
+const progressSteps = document.getElementById("progressSteps");
+
+function setProgressStep(stepKey) {
+  const idx = STEP_ORDER.indexOf(stepKey);
+  if (idx === -1) return;
+
+  progressLabel.textContent = `Step ${idx + 1} of ${STEP_ORDER.length}`;
+
+  const stepEls = progressSteps.querySelectorAll(".progress-step");
+  stepEls.forEach((el, i) => {
+    const completed = i < idx;
+    el.classList.toggle("completed", completed);
+    el.classList.toggle("active", i === idx);
+    el.querySelector(".step-circle").textContent = completed ? "✓" : String(i + 1);
+  });
+
+  const connectorEls = progressSteps.querySelectorAll(".progress-connector");
+  connectorEls.forEach((el, i) => {
+    el.classList.toggle("completed", i < idx);
+  });
+}
+
 const lightbox = document.getElementById("lightbox");
 const lightboxBackdrop = document.getElementById("lightboxBackdrop");
 const lightboxImg = document.getElementById("lightboxImg");
@@ -333,6 +357,7 @@ residentialBtn.addEventListener("click", () => {
   propertyTypePanel.hidden = true;
   appContent.hidden = false;
   headerPromo.hidden = false;
+  setProgressStep("design");
 });
 
 commercialBtn.addEventListener("click", () => {
@@ -452,6 +477,7 @@ function selectStyle(style, card) {
   customizePanel.hidden = true;
   approvalImg.src = chosenStyle.image;
   approvalPanel.hidden = false;
+  setProgressStep("confirm");
   approvalPanel.scrollIntoView({ behavior: "smooth", block: "start" });
 }
 
@@ -469,6 +495,7 @@ backToStylesBtn.addEventListener("click", () => {
   approvalPanel.hidden = true;
   document.querySelectorAll(".style-card.selected").forEach((el) => el.classList.remove("selected"));
   chosenStyle = null;
+  setProgressStep("design");
   styleGrid.scrollIntoView({ behavior: "smooth", block: "start" });
 });
 
@@ -478,6 +505,7 @@ function openPackagePanel() {
   packageHeroImg.src = "dream-display.png";
   renderPackageCards();
   packagePanel.hidden = false;
+  setProgressStep("package");
   packagePanel.scrollIntoView({ behavior: "smooth", block: "start" });
 }
 
@@ -530,6 +558,7 @@ backToApprovalBtn.addEventListener("click", () => {
   document.querySelectorAll(".style-card.selected").forEach((el) => el.classList.remove("selected"));
   chosenStyle = null;
   chosenPackage = null;
+  setProgressStep("design");
   styleGrid.scrollIntoView({ behavior: "smooth", block: "start" });
 });
 
@@ -539,6 +568,7 @@ function revealLeadPanel() {
   leadForm.hidden = false;
   leadPanel.hidden = false;
   setLeadMsg("");
+  setProgressStep("quote");
   leadPanel.scrollIntoView({ behavior: "smooth", block: "start" });
 }
 
@@ -547,6 +577,7 @@ function openCustomizePanel() {
   decorCanvasWrap.querySelectorAll(".decor-item").forEach((el) => el.remove());
   decorBaseImg.src = chosenStyle.image;
   customizePanel.hidden = false;
+  setProgressStep("lighting");
   customizePanel.scrollIntoView({ behavior: "smooth", block: "start" });
 }
 
@@ -786,6 +817,7 @@ fileInput.addEventListener("change", () => {
 
   renderCards("idle");
   setStatus("");
+  setProgressStep("design");
 
   chosenStyle = null;
   chosenPackage = null;
@@ -849,6 +881,7 @@ function setStatus(message, isError = false) {
 }
 
 loadStyles();
+setProgressStep("design");
 
 setupAddressAutocomplete(leadAddress, document.getElementById("leadAddressSuggestions"));
 setupAddressAutocomplete(commAddress, document.getElementById("commAddressSuggestions"));

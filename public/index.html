@@ -76,6 +76,36 @@
     </section>
 
     <div id="appContent" hidden>
+      <nav class="progress-bar" id="progressBar" aria-label="Design progress">
+        <p class="progress-label" id="progressLabel">Step 1 of 5</p>
+        <ol class="progress-steps" id="progressSteps">
+          <li class="progress-step" data-step="design">
+            <span class="step-circle">1</span>
+            <span class="step-name">Design</span>
+          </li>
+          <li class="progress-connector"></li>
+          <li class="progress-step" data-step="confirm">
+            <span class="step-circle">2</span>
+            <span class="step-name">Confirm</span>
+          </li>
+          <li class="progress-connector"></li>
+          <li class="progress-step" data-step="lighting">
+            <span class="step-circle">3</span>
+            <span class="step-name">Lighting</span>
+          </li>
+          <li class="progress-connector"></li>
+          <li class="progress-step" data-step="package">
+            <span class="step-circle">4</span>
+            <span class="step-name">Package</span>
+          </li>
+          <li class="progress-connector"></li>
+          <li class="progress-step" data-step="quote">
+            <span class="step-circle">5</span>
+            <span class="step-name">Quote</span>
+          </li>
+        </ol>
+      </nav>
+
       <section class="controls">
         <label class="upload-box" id="uploadBox">
           <input type="file" id="fileInput" accept="image/*" hidden />
