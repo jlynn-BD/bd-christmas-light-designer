@@ -127,7 +127,16 @@ function buildPrompt(lightDescription) {
     "If you are not certain an edge is the gutter line, leave it unlit. " +
     "\n\nDo NOT add lights anywhere else. This is a strict list of what to leave completely unlit:\n" +
     "- Do NOT add lights to the roof overhang directly above a garage door — the garage roofline must stay " +
-    "completely unlit, even though the main house roofline next to it is lit.\n" +
+    "completely unlit, even though the main house roofline next to it is lit. A common mistake is to draw a " +
+    "light strand along the horizontal trim or fascia directly above the garage door opening — that is WRONG " +
+    "and unacceptable, even though it looks like a plausible gutter line. That trim line belongs to the " +
+    "garage's own separate, lower roof structure and must be left completely bare, with zero bulbs on it. " +
+    "IMPORTANT: on houses with an attached garage, there are usually TWO separate roof edges stacked near the " +
+    "garage — a LOWER one that is the garage's own roof overhang directly above the garage door opening (leave " +
+    "this one completely dark), and a HIGHER one above it at the main house roof eave or gable (light only " +
+    "this one). If you find yourself about to place a bulb anywhere above a garage door, stop and check: is " +
+    "this bulb on the higher main-roof line, or on the lower garage-door trim? If there is any doubt, do not " +
+    "place a bulb there.\n" +
     "- Do NOT add lights to a porch roof, covered entryway, or entry overhang — only the main house roofline " +
     "(the gables and dormers of the primary structure) gets lit, never the porch or entry roof. " +
     "IMPORTANT: on houses with a covered porch, there are usually TWO separate gutter lines stacked at " +
