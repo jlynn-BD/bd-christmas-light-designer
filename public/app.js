@@ -1,4 +1,5 @@
 const headerPromo = document.getElementById("headerPromo");
+const controlsPanel = document.getElementById("controlsPanel");
 const fileInput = document.getElementById("fileInput");
 const uploadLabel = document.getElementById("uploadLabel");
 const originalImg = document.getElementById("originalImg");
@@ -29,6 +30,10 @@ function setProgressStep(stepKey) {
   connectorEls.forEach((el, i) => {
     el.classList.toggle("completed", i < idx);
   });
+}
+
+function scrollToTop() {
+  window.scrollTo({ top: 0, behavior: "smooth" });
 }
 
 const lightbox = document.getElementById("lightbox");
@@ -472,13 +477,15 @@ function selectStyle(style, card) {
   const img = card.querySelector("img");
   chosenStyle = { key: style.key, label: style.label, image: img.src, customized: false };
 
+  controlsPanel.hidden = true;
+  styleGrid.hidden = true;
   leadPanel.hidden = true;
   packagePanel.hidden = true;
   customizePanel.hidden = true;
   approvalImg.src = chosenStyle.image;
   approvalPanel.hidden = false;
   setProgressStep("confirm");
-  approvalPanel.scrollIntoView({ behavior: "smooth", block: "start" });
+  scrollToTop();
 }
 
 thumbsUpBtn.addEventListener("click", () => {
@@ -493,10 +500,12 @@ thumbsDownBtn.addEventListener("click", () => {
 
 backToStylesBtn.addEventListener("click", () => {
   approvalPanel.hidden = true;
+  controlsPanel.hidden = false;
+  styleGrid.hidden = false;
   document.querySelectorAll(".style-card.selected").forEach((el) => el.classList.remove("selected"));
   chosenStyle = null;
   setProgressStep("design");
-  styleGrid.scrollIntoView({ behavior: "smooth", block: "start" });
+  scrollToTop();
 });
 
 function openPackagePanel() {
@@ -506,7 +515,7 @@ function openPackagePanel() {
   renderPackageCards();
   packagePanel.hidden = false;
   setProgressStep("package");
-  packagePanel.scrollIntoView({ behavior: "smooth", block: "start" });
+  scrollToTop();
 }
 
 function renderPackageCards() {
@@ -555,11 +564,13 @@ packageContinueBtn.addEventListener("click", () => {
 
 backToApprovalBtn.addEventListener("click", () => {
   packagePanel.hidden = true;
+  controlsPanel.hidden = false;
+  styleGrid.hidden = false;
   document.querySelectorAll(".style-card.selected").forEach((el) => el.classList.remove("selected"));
   chosenStyle = null;
   chosenPackage = null;
   setProgressStep("design");
-  styleGrid.scrollIntoView({ behavior: "smooth", block: "start" });
+  scrollToTop();
 });
 
 function revealLeadPanel() {
@@ -569,7 +580,7 @@ function revealLeadPanel() {
   leadPanel.hidden = false;
   setLeadMsg("");
   setProgressStep("quote");
-  leadPanel.scrollIntoView({ behavior: "smooth", block: "start" });
+  scrollToTop();
 }
 
 function openCustomizePanel() {
@@ -578,7 +589,7 @@ function openCustomizePanel() {
   decorBaseImg.src = chosenStyle.image;
   customizePanel.hidden = false;
   setProgressStep("lighting");
-  customizePanel.scrollIntoView({ behavior: "smooth", block: "start" });
+  scrollToTop();
 }
 
 document.querySelectorAll(".decor-add-btn").forEach((btn) => {
