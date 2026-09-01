@@ -93,15 +93,17 @@ const STYLES = [
     label: "Red, Green and White",
     description:
       "C9 bulbs in a strict repeating THREE-color sequence — red, green, white, red, green, white — " +
-      "repeating continuously along the entire strand. A common mistake is to render this as a two-color " +
-      "red-and-green candy-cane pattern with no white bulbs at all — that is WRONG and unacceptable; white is " +
-      "not optional or decorative here, it is one of the three required colors. Count through every strand in " +
-      "groups of three and assign each bulb in order: 1st bulb red, 2nd bulb green, 3rd bulb white, 4th bulb " +
-      "red, 5th bulb green, 6th bulb white, repeating this exact 1-2-3 count for the entire roofline. The white " +
-      "bulb in each group of three must be just as bright, saturated, and easy to spot as the red and green " +
-      "bulbs — never dim, never skipped, never merged with the roofline or fascia color. Before finishing, " +
-      "check every strand on the house: if any stretch shows only red and green with no white, that stretch is " +
-      "wrong and must be corrected",
+      "repeating continuously along the entire strand. A common mistake is to collapse this into any " +
+      "TWO-color pattern and drop the third color entirely — for example red-and-green with no white, " +
+      "red-and-white with no green, or green-and-white with no red. ALL THREE of these mistakes are WRONG " +
+      "and unacceptable, no matter which two colors end up paired together: red, green, AND white are each " +
+      "individually required, none of them is optional or more droppable than the others. Count through " +
+      "every strand in groups of three and assign each bulb in order: 1st bulb red, 2nd bulb green, 3rd bulb " +
+      "white, 4th bulb red, 5th bulb green, 6th bulb white, repeating this exact 1-2-3 count for the entire " +
+      "roofline. Each of the three colors must be just as bright, saturated, and easy to spot as the other " +
+      "two — never dim, never skipped, never merged with the roofline or fascia color. Before finishing, " +
+      "check every strand on the house: count how many distinct colors appear on it. If any stretch shows " +
+      "only two colors instead of all three, that stretch is wrong and must be corrected",
   },
 ];
 
