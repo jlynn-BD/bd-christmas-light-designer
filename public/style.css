@@ -492,7 +492,7 @@ button:not(:disabled):hover {
 }
 
 .approval-preview {
-  max-width: 480px;
+  max-width: 800px;
   margin: 0 auto 1.5rem;
 }
 
