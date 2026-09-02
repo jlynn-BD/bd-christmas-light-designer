@@ -162,7 +162,12 @@ function buildPrompt(lightDescription) {
     "on the bulbs themselves, never as a wash over the house, sky, or landscaping. " +
     "Give the lights a realistic warm glow and subtle light bloom, as if photographed at night, well after " +
     "sunset, the way a professional lighting company's portfolio photos look — a dark night sky, not a bright " +
-    "dusk sky, so the warm glow of the bulbs stands out with real contrast. " +
+    "dusk sky, so the warm glow of the bulbs stands out with real contrast. A common mistake is to render each " +
+    "bulb as a glossy, glassy sphere with a bright specular highlight, like a 3D-rendered icon, clip-art " +
+    "ornament, or gumball — that look is WRONG and unacceptable, even though the colors and placement are " +
+    "correct. Real C9 bulbs are matte plastic that glow softly from within; they do NOT have a shiny, " +
+    "reflective, glass-like highlight on their surface. Every bulb must look matte and softly glowing, not " +
+    "glossy or glassy. " +
     "Keep the house structure, landscaping, background, and camera angle exactly the same — only add the " +
     "roofline lights themselves and a natural dark night sky if the original photo was taken in daylight. " +
     "Do not add snow, decorations other than the roofline lights, or text of any kind. " +
@@ -170,6 +175,8 @@ function buildPrompt(lightDescription) {
     "Look at every strand you have drawn and compare it to that requirement. If any strand is missing a " +
     "required color, uses the wrong ratio, or has silently collapsed into a simpler pattern than what was " +
     "specified, that is wrong — fix it before finishing. " +
+    "Also re-check bulb material: if any bulb looks like a shiny, glossy, glass-like sphere with a bright " +
+    "reflective highlight, that is wrong — every bulb must look matte and softly glowing instead. " +
     "Output only the edited image — no explanation or caption."
   );
 }
