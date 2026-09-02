@@ -36,6 +36,75 @@ function scrollToTop() {
   window.scrollTo({ top: 0, behavior: "smooth" });
 }
 
+function hideAllStepPanels() {
+  controlsPanel.hidden = true;
+  styleGrid.hidden = true;
+  approvalPanel.hidden = true;
+  customizePanel.hidden = true;
+  packagePanel.hidden = true;
+  leadPanel.hidden = true;
+}
+
+function showDesign() {
+  hideAllStepPanels();
+  controlsPanel.hidden = false;
+  styleGrid.hidden = false;
+  setProgressStep("design");
+  scrollToTop();
+}
+
+function showConfirm() {
+  if (!chosenStyle) return;
+  hideAllStepPanels();
+  approvalImg.src = chosenStyle.image;
+  approvalPanel.hidden = false;
+  setProgressStep("confirm");
+  scrollToTop();
+}
+
+function showLighting() {
+  if (!chosenStyle) return;
+  hideAllStepPanels();
+  decorBaseImg.src = chosenStyle.baseImage;
+  customizePanel.hidden = false;
+  setProgressStep("lighting");
+  scrollToTop();
+}
+
+function showPackage() {
+  hideAllStepPanels();
+  packagePanel.hidden = false;
+  setProgressStep("package");
+  scrollToTop();
+}
+
+function showQuote() {
+  hideAllStepPanels();
+  leadPanel.hidden = false;
+  setProgressStep("quote");
+  scrollToTop();
+}
+
+function goToStep(stepKey) {
+  if (stepKey === "design") {
+    document.querySelectorAll(".style-card.selected").forEach((el) => el.classList.remove("selected"));
+    chosenStyle = null;
+    showDesign();
+  } else if (stepKey === "confirm" && chosenStyle) {
+    showConfirm();
+  } else if (stepKey === "lighting" && chosenStyle) {
+    showLighting();
+  } else if (stepKey === "package" && chosenStyle) {
+    showPackage();
+  }
+}
+
+progressSteps.addEventListener("click", (e) => {
+  const stepEl = e.target.closest(".progress-step");
+  if (!stepEl || !stepEl.classList.contains("completed")) return;
+  goToStep(stepEl.dataset.step);
+});
+
 const lightbox = document.getElementById("lightbox");
 const lightboxBackdrop = document.getElementById("lightboxBackdrop");
 const lightboxImg = document.getElementById("lightboxImg");
@@ -485,37 +554,26 @@ function selectStyle(style, card) {
   card.classList.add("selected");
 
   const img = card.querySelector("img");
-  chosenStyle = { key: style.key, label: style.label, image: img.src, customized: false };
+  chosenStyle = { key: style.key, label: style.label, image: img.src, baseImage: img.src, customized: false };
 
-  controlsPanel.hidden = true;
-  styleGrid.hidden = true;
-  leadPanel.hidden = true;
-  packagePanel.hidden = true;
-  customizePanel.hidden = true;
-  approvalImg.src = chosenStyle.image;
-  approvalPanel.hidden = false;
-  setProgressStep("confirm");
-  scrollToTop();
+  decorations = [];
+  decorCanvasWrap.querySelectorAll(".decor-item").forEach((el) => el.remove());
+
+  showConfirm();
 }
 
 thumbsUpBtn.addEventListener("click", () => {
-  approvalPanel.hidden = true;
+  if (!chosenStyle) return;
   openPackagePanel();
 });
 
 thumbsDownBtn.addEventListener("click", () => {
-  approvalPanel.hidden = true;
+  if (!chosenStyle) return;
   openCustomizePanel();
 });
 
 backToStylesBtn.addEventListener("click", () => {
-  approvalPanel.hidden = true;
-  controlsPanel.hidden = false;
-  styleGrid.hidden = false;
-  document.querySelectorAll(".style-card.selected").forEach((el) => el.classList.remove("selected"));
-  chosenStyle = null;
-  setProgressStep("design");
-  scrollToTop();
+  goToStep("design");
 });
 
 function openPackagePanel() {
@@ -523,9 +581,7 @@ function openPackagePanel() {
   packageContinueBtn.disabled = true;
   packageHeroImg.src = "dream-display.png";
   renderPackageCards();
-  packagePanel.hidden = false;
-  setProgressStep("package");
-  scrollToTop();
+  showPackage();
 }
 
 function renderPackageCards() {
@@ -580,55 +636,34 @@ function selectPackage(pkg, card) {
 
 packageContinueBtn.addEventListener("click", () => {
   if (!chosenPackage) return;
-  packagePanel.hidden = true;
   revealLeadPanel();
 });
 
 backToApprovalBtn.addEventListener("click", () => {
-  packagePanel.hidden = true;
-  if (chosenStyle && chosenStyle.customized) {
-    customizePanel.hidden = false;
-    setProgressStep("lighting");
-  } else {
-    approvalImg.src = chosenStyle.image;
-    approvalPanel.hidden = false;
-    setProgressStep("confirm");
-  }
-  scrollToTop();
+  goToStep(chosenStyle && chosenStyle.customized ? "lighting" : "confirm");
 });
 
 backToConfirmBtn.addEventListener("click", () => {
-  customizePanel.hidden = true;
-  approvalImg.src = chosenStyle.image;
-  approvalPanel.hidden = false;
-  setProgressStep("confirm");
-  scrollToTop();
+  goToStep("confirm");
 });
 
 backToPackageBtn.addEventListener("click", () => {
-  leadPanel.hidden = true;
-  packagePanel.hidden = false;
-  setProgressStep("package");
-  scrollToTop();
+  goToStep("package");
 });
 
 function revealLeadPanel() {
+  if (!chosenStyle) return;
   chosenStyleLabel.textContent = chosenStyle.label + (chosenStyle.customized ? " (customized by you)" : "");
   chosenPackageLabel.textContent = chosenPackage ? `${chosenPackage.name} (${chosenPackage.features.join(", ")})` : "";
   leadForm.hidden = false;
-  leadPanel.hidden = false;
   setLeadMsg("");
-  setProgressStep("quote");
-  scrollToTop();
+  showQuote();
 }
 
 function openCustomizePanel() {
   decorations = [];
   decorCanvasWrap.querySelectorAll(".decor-item").forEach((el) => el.remove());
-  decorBaseImg.src = chosenStyle.image;
-  customizePanel.hidden = false;
-  setProgressStep("lighting");
-  scrollToTop();
+  showLighting();
 }
 
 document.querySelectorAll(".decor-add-btn").forEach((btn) => {
@@ -759,7 +794,6 @@ customizeDoneBtn.addEventListener("click", async () => {
     const flattened = await flattenDesign();
     chosenStyle.image = flattened;
     chosenStyle.customized = true;
-    customizePanel.hidden = true;
     openPackagePanel();
   } catch {
     alert("Something went wrong applying your decorations. Please try again.");

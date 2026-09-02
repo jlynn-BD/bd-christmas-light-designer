@@ -215,14 +215,28 @@ button.secondary {
   transition: color 0.3s ease;
 }
 
+.progress-step.completed {
+  cursor: pointer;
+}
+
 .progress-step.completed .step-circle {
   background: var(--accent-2);
   border-color: var(--accent-2);
   color: var(--accent-2-text);
+  transition: transform 0.15s ease, box-shadow 0.3s ease, background 0.3s ease, border-color 0.3s ease, color 0.3s ease;
+}
+
+.progress-step.completed:hover .step-circle {
+  transform: scale(1.12);
+  box-shadow: 0 0 0 4px rgba(245, 200, 66, 0.25);
 }
 
 .progress-step.completed .step-name {
   color: var(--text);
+}
+
+.progress-step.completed:hover .step-name {
+  text-decoration: underline;
 }
 
 .progress-step.active .step-circle {
