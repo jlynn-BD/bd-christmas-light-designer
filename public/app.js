@@ -854,6 +854,7 @@ leadForm.addEventListener("submit", async (e) => {
         email: leadEmail.value.trim(),
         zip: verifiedZip,
         propertyType: "residential",
+        contactPreference: leadForm.querySelector('input[name="contactPreference"]:checked')?.value ?? null,
         styleKey: chosenStyle.key,
         styleLabel: chosenStyle.label,
         customized: chosenStyle.customized,

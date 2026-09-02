@@ -7,6 +7,8 @@ import path from "path";
 import crypto from "crypto";
 import pg from "pg";
 import { GoogleGenAI } from "@google/genai";
+import { generateLeadPdf } from "./lead-pdf.js";
+import { sendLeadEmail } from "./lead-email.js";
 
 const app = express();
 const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 15 * 1024 * 1024 } });
@@ -45,6 +47,9 @@ async function ensureLeadsTable() {
       rendered_image TEXT
     )
   `);
+  // Added after the leads table already existed in production — ALTER is required
+  // since CREATE TABLE IF NOT EXISTS above is a no-op once the table is present.
+  await pool.query(`ALTER TABLE leads ADD COLUMN IF NOT EXISTS contact_preference TEXT`);
 }
 ensureLeadsTable().catch((err) => console.error("Failed to ensure leads table exists:", err));
 
@@ -260,6 +265,7 @@ app.post("/api/leads", async (req, res) => {
   const renderedPhoto = saveDataUrlImage(body.renderedImage, path.join(leadDir, "rendered"));
 
   const propertyType = body.propertyType === "commercial" ? "commercial" : "residential";
+  const contactPreference = ["call", "quote_only"].includes(body.contactPreference) ? body.contactPreference : null;
 
   const record = {
     id: leadId,
@@ -270,6 +276,7 @@ app.post("/api/leads", async (req, res) => {
     email: String(body.email).trim(),
     zip: body.zip ?? null,
     propertyType,
+    contactPreference,
     styleKey: body.styleKey ?? null,
     styleLabel: body.styleLabel ?? null,
     customized: Boolean(body.customized),
@@ -289,8 +296,8 @@ app.post("/api/leads", async (req, res) => {
         `INSERT INTO leads (
            id, submitted_at, name, address, phone, email, zip, property_type,
            style_key, style_label, customized, package_key, package_label,
-           package_features, offer_presented, original_image, rendered_image
-         ) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17)`,
+           package_features, offer_presented, original_image, rendered_image, contact_preference
+         ) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18)`,
         [
           record.id,
           record.submittedAt,
@@ -309,6 +316,7 @@ app.post("/api/leads", async (req, res) => {
           record.offerPresented,
           body.originalImage ?? null,
           body.renderedImage ?? null,
+          record.contactPreference,
         ]
       );
     } catch (err) {
@@ -317,6 +325,20 @@ app.post("/api/leads", async (req, res) => {
   }
 
   res.json({ ok: true, leadId });
+
+  // PDF generation + office notification email run after the response is sent so the
+  // customer isn't kept waiting on them; failures here are logged, never surfaced to the
+  // customer or allowed to affect the lead having already been saved above.
+  generateLeadPdf({
+    ...record,
+    originalImageDataUrl: body.originalImage,
+    renderedImageDataUrl: body.renderedImage,
+  })
+    .then((pdfBuffer) => {
+      fs.writeFileSync(path.join(leadDir, "lead-summary.pdf"), pdfBuffer);
+      return sendLeadEmail({ lead: record, pdfBuffer });
+    })
+    .catch((err) => console.error("Failed to generate/send lead PDF for", leadId, ":", err));
 });
 
 app.post("/api/generate-all", upload.single("image"), async (req, res) => {

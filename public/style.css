@@ -807,6 +807,58 @@ button:not(:disabled):hover {
   color: var(--text);
 }
 
+.contact-pref-field {
+  border: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+}
+
+.contact-pref-field legend {
+  font-size: 0.85rem;
+  color: var(--muted);
+  padding: 0;
+  margin-bottom: 0.35rem;
+}
+
+.contact-pref-option {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  column-gap: 0.6rem;
+  row-gap: 0.15rem;
+  align-items: start;
+  padding: 0.75rem 0.9rem;
+  border-radius: 8px;
+  border: 1px solid var(--muted);
+  background: #0f2452;
+  cursor: pointer;
+  transition: border-color 0.2s ease, background 0.2s ease;
+}
+
+.contact-pref-option:has(input:checked) {
+  border-color: var(--accent-2);
+  background: rgba(245, 200, 66, 0.1);
+}
+
+.contact-pref-option input[type="radio"] {
+  width: auto;
+  grid-row: 1 / 3;
+  margin-top: 0.2rem;
+  accent-color: var(--accent-2);
+}
+
+.contact-pref-title {
+  font-weight: 700;
+  color: var(--text);
+}
+
+.contact-pref-copy {
+  font-size: 0.85rem;
+  color: var(--muted);
+}
+
 .lead-form button {
   margin-top: 0.5rem;
 }

@@ -224,6 +224,20 @@
             <input type="email" id="leadEmail" autocomplete="email" required />
           </div>
 
+          <fieldset class="contact-pref-field">
+            <legend>How would you like to proceed?</legend>
+            <label class="contact-pref-option">
+              <input type="radio" name="contactPreference" value="call" required />
+              <span class="contact-pref-title">📞 Talk With a Designer</span>
+              <span class="contact-pref-copy">I'd like someone from the Blue Duck team to call me and walk me through my options.</span>
+            </label>
+            <label class="contact-pref-option">
+              <input type="radio" name="contactPreference" value="quote_only" required />
+              <span class="contact-pref-title">📧 Just Send Me My Quote</span>
+              <span class="contact-pref-copy">You already know what I want. Please email me a quote based on this design.</span>
+            </label>
+          </fieldset>
+
           <button type="submit" id="leadSubmitBtn">🎁 Claim My 50% Off Offer</button>
           <p id="leadMsg" class="gate-msg"></p>
         </form>
