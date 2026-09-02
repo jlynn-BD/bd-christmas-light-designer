@@ -695,6 +695,22 @@ button:not(:disabled):hover {
 .package-card li {
   color: var(--muted);
   font-size: 0.9rem;
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.feature-number-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  font-size: 0.7rem;
+  font-weight: 700;
+  color: #fff;
+  flex-shrink: 0;
 }
 
 .package-card.selected li {

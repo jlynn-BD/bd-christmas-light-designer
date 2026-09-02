@@ -223,6 +223,14 @@ const PACKAGES = [
   },
 ];
 
+const FEATURE_LEGEND = {
+  Roofline: { number: 1, color: "#86b83e" },
+  Wreath: { number: 2, color: "#e58909" },
+  Trees: { number: 3, color: "#663798" },
+  "Driveway Stake Lighting": { number: 4, color: "#cd1513" },
+  "Sidewalk Stake Lighting": { number: 5, color: "#d99638" },
+};
+
 const LOADING_QUOTES = [
   "🎄 Deck the halls, one bulb at a time.",
   "✨ 'Tis the season to twinkle bright.",
@@ -539,7 +547,19 @@ function renderPackageCards() {
     const list = document.createElement("ul");
     for (const feature of pkg.features) {
       const li = document.createElement("li");
-      li.textContent = feature;
+      const label = document.createElement("span");
+      label.textContent = feature;
+      li.appendChild(label);
+
+      const legendEntry = FEATURE_LEGEND[feature];
+      if (legendEntry) {
+        const numBadge = document.createElement("span");
+        numBadge.className = "feature-number-badge";
+        numBadge.textContent = legendEntry.number;
+        numBadge.style.backgroundColor = legendEntry.color;
+        li.appendChild(numBadge);
+      }
+
       list.appendChild(li);
     }
     card.appendChild(list);
