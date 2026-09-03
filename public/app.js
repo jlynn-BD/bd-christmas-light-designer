@@ -9,6 +9,7 @@ const styleGrid = document.getElementById("styleGrid");
 const appContent = document.getElementById("appContent");
 
 const STEP_ORDER = ["design", "confirm", "lighting", "package", "quote"];
+const progressBar = document.getElementById("progressBar");
 const progressLabel = document.getElementById("progressLabel");
 const progressSteps = document.getElementById("progressSteps");
 
@@ -85,6 +86,27 @@ function showQuote() {
   scrollToTop();
 }
 
+const CONTACT_PREFERENCE_COPY = {
+  call: "A member of our design team will reach out by phone shortly to walk you through your options.",
+  quote_only: "You'll receive your personalized estimate by email shortly — no call needed.",
+};
+
+function showThankYou(contactPreference) {
+  hideAllStepPanels();
+  progressBar.hidden = true;
+
+  thankYouNextStep.textContent =
+    CONTACT_PREFERENCE_COPY[contactPreference] ??
+    "You'll receive your personalized estimate by email, or a member of our design team will contact you shortly.";
+
+  thankYouSummary.textContent = chosenStyle
+    ? `You chose ${chosenStyle.label}${chosenPackage ? ` — ${chosenPackage.name}` : ""}.`
+    : "";
+
+  thankYouPanel.hidden = false;
+  scrollToTop();
+}
+
 function goToStep(stepKey) {
   if (stepKey === "design") {
     document.querySelectorAll(".style-card.selected").forEach((el) => el.classList.remove("selected"));
@@ -154,6 +176,10 @@ const leadPhone = document.getElementById("leadPhone");
 const leadEmail = document.getElementById("leadEmail");
 const leadSubmitBtn = document.getElementById("leadSubmitBtn");
 const leadMsg = document.getElementById("leadMsg");
+
+const thankYouPanel = document.getElementById("thankYouPanel");
+const thankYouNextStep = document.getElementById("thankYouNextStep");
+const thankYouSummary = document.getElementById("thankYouSummary");
 
 function setupAddressAutocomplete(inputEl, listEl) {
   let debounceTimer = null;
@@ -441,6 +467,8 @@ residentialBtn.addEventListener("click", () => {
   propertyTypePanel.hidden = true;
   appContent.hidden = false;
   headerPromo.hidden = false;
+  progressBar.hidden = false;
+  thankYouPanel.hidden = true;
   setProgressStep("design");
 });
 
@@ -843,6 +871,8 @@ leadForm.addEventListener("submit", async (e) => {
   leadSubmitBtn.disabled = true;
   setLeadMsg("Submitting...");
 
+  const contactPreference = leadForm.querySelector('input[name="contactPreference"]:checked')?.value ?? null;
+
   try {
     const res = await fetch("/api/leads", {
       method: "POST",
@@ -854,7 +884,7 @@ leadForm.addEventListener("submit", async (e) => {
         email: leadEmail.value.trim(),
         zip: verifiedZip,
         propertyType: "residential",
-        contactPreference: leadForm.querySelector('input[name="contactPreference"]:checked')?.value ?? null,
+        contactPreference,
         styleKey: chosenStyle.key,
         styleLabel: chosenStyle.label,
         customized: chosenStyle.customized,
@@ -869,11 +899,7 @@ leadForm.addEventListener("submit", async (e) => {
     const data = await res.json();
     if (!res.ok) throw new Error(data.error || "Failed to submit your request.");
 
-    leadForm.hidden = true;
-    setLeadMsg(
-      "🎉 Thank you! Your information has been submitted. A member of the Blue Duck Christmas Lights team " +
-        "will contact you shortly to lock in your 50% off first-year offer."
-    );
+    showThankYou(contactPreference);
   } catch (err) {
     setLeadMsg(err.message, true);
   } finally {
