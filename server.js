@@ -9,6 +9,7 @@ import pg from "pg";
 import { GoogleGenAI } from "@google/genai";
 import { generateLeadPdf } from "./lead-pdf.js";
 import { sendLeadEmail } from "./lead-email.js";
+import { syncLeadToCrm } from "./lead-crm.js";
 
 const app = express();
 const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 15 * 1024 * 1024 } });
@@ -326,9 +327,9 @@ app.post("/api/leads", async (req, res) => {
 
   res.json({ ok: true, leadId });
 
-  // PDF generation + office notification email run after the response is sent so the
-  // customer isn't kept waiting on them; failures here are logged, never surfaced to the
-  // customer or allowed to affect the lead having already been saved above.
+  // PDF generation + office notification email + CRM sync all run after the response is
+  // sent so the customer isn't kept waiting on them; failures here are logged, never
+  // surfaced to the customer or allowed to affect the lead having already been saved above.
   generateLeadPdf({
     ...record,
     originalImageDataUrl: body.originalImage,
@@ -339,6 +340,8 @@ app.post("/api/leads", async (req, res) => {
       return sendLeadEmail({ lead: record, pdfBuffer });
     })
     .catch((err) => console.error("Failed to generate/send lead PDF for", leadId, ":", err));
+
+  syncLeadToCrm(record).catch((err) => console.error("Failed to sync lead to CRM for", leadId, ":", err));
 });
 
 app.post("/api/generate-all", upload.single("image"), async (req, res) => {
