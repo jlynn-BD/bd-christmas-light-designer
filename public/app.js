@@ -996,3 +996,14 @@ setProgressStep("design");
 
 setupAddressAutocomplete(leadAddress, document.getElementById("leadAddressSuggestions"));
 setupAddressAutocomplete(commAddress, document.getElementById("commAddressSuggestions"));
+
+// When embedded in an iframe (e.g. on the main WordPress site), tell the parent page how
+// tall the content is so it can resize the iframe instead of showing a nested scrollbar.
+if (window.parent !== window) {
+  const reportHeight = () => {
+    window.parent.postMessage({ type: "blueduck-widget-resize", height: document.documentElement.scrollHeight }, "*");
+  };
+  new ResizeObserver(reportHeight).observe(document.body);
+  window.addEventListener("load", reportHeight);
+  reportHeight();
+}
