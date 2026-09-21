@@ -310,20 +310,20 @@ const PACKAGES = [
     key: "package3",
     name: "Santa's Favorite",
     subtitle: null,
-    features: ["Roofline", "Wreath", "Trees"],
+    features: ["Roofline", "Wreath", "Trees and Shrubs"],
   },
   {
     key: "package4",
     name: "Clark Griswold Package",
     subtitle: null,
-    features: ["Roofline", "Wreath", "Trees", "Driveway Stake Lighting", "Sidewalk Stake Lighting"],
+    features: ["Roofline", "Wreath", "Trees and Shrubs", "Driveway Stake Lighting", "Sidewalk Stake Lighting"],
   },
 ];
 
 const FEATURE_LEGEND = {
   Roofline: { number: 1, color: "#86b83e" },
   Wreath: { number: 2, color: "#e58909" },
-  Trees: { number: 3, color: "#663798" },
+  "Trees and Shrubs": { number: 3, color: "#663798" },
   "Driveway Stake Lighting": { number: 4, color: "#cd1513" },
   "Sidewalk Stake Lighting": { number: 5, color: "#d99638" },
 };
