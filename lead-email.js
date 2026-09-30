@@ -9,6 +9,11 @@ function escapeHtml(str) {
   return String(str ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
 }
 
+const CONTACT_PREFERENCE_COPY = {
+  call: "A member of our design team will reach out by phone shortly to walk you through your options.",
+  quote_only: "You'll receive your personalized estimate by email shortly — no call needed.",
+};
+
 /**
  * Emails the office a quick-glance summary plus the full lead PDF attached.
  * Never throws — logs and returns { ok: false } on failure so a lead
@@ -81,6 +86,80 @@ export async function sendLeadEmail({ lead, pdfBuffer }) {
     return { ok: true, id: result.data?.id };
   } catch (err) {
     console.error("Failed to send lead notification email:", err);
+    return { ok: false, error: err.message };
+  }
+}
+
+/**
+ * Emails the customer themselves a confirmation that their request was received,
+ * mirroring the on-screen thank-you page. Never throws — logs and returns
+ * { ok: false } on failure so a lead submission never fails because of this.
+ *
+ * Deliberately plain HTML with no attachments or inline images — matches the
+ * structure of the office notification email, which reliably lands in the
+ * inbox rather than spam on this freshly-verified sending domain.
+ */
+export async function sendCustomerConfirmationEmail({ lead }) {
+  if (!resend) {
+    console.error("RESEND_API_KEY is not set — skipping customer confirmation email.");
+    return { ok: false, error: "RESEND_API_KEY not configured" };
+  }
+
+  const isCommercial = lead.propertyType === "commercial";
+  const firstName = String(lead.name ?? "").trim().split(/\s+/)[0] || "there";
+
+  const subject = isCommercial
+    ? "Your Blue Duck consultation request has been received!"
+    : "Your Blue Duck Christmas Lights request has been received!";
+
+  const nextStep = isCommercial
+    ? "A member of the Blue Duck Christmas Lights team will contact you shortly to schedule your consultation."
+    : CONTACT_PREFERENCE_COPY[lead.contactPreference] ??
+      "You'll receive your personalized estimate by email, or a member of our design team will contact you shortly.";
+
+  const offerBanner =
+    !isCommercial && lead.offerPresented
+      ? `
+      <div style="background: linear-gradient(135deg, #e63946, #b3212c); border-radius: 10px; padding: 18px 20px; margin: 18px 0; text-align: center;">
+        <span style="display: inline-block; background: #f5c842; color: #16305c; font-weight: bold; font-size: 12px; padding: 4px 12px; border-radius: 999px; text-transform: uppercase; letter-spacing: 0.03em; margin-bottom: 8px;">🎉 Offer Locked In</span>
+        <p style="margin: 8px 0 0; color: #fff; font-size: 15px;">You've claimed <strong>50% off your first year</strong> of professional installation and takedown.</p>
+      </div>`
+      : "";
+
+  const designSummary =
+    !isCommercial && lead.styleLabel
+      ? `<p style="color: #5a6b85; margin: 0 0 4px;">You chose <strong style="color:#1a1a1a;">${escapeHtml(lead.styleLabel)}</strong>${
+          lead.packageLabel ? ` — <strong style="color:#1a1a1a;">${escapeHtml(lead.packageLabel)}</strong>` : ""
+        }.</p>`
+      : "";
+
+  const html = `
+    <div style="font-family: Arial, sans-serif; max-width: 520px; margin: 0 auto; color: #1a1a1a; text-align: center;">
+      <h2 style="color: #16305c; margin-bottom: 4px;">Your Request Has Been Received!</h2>
+      <p style="color: #5a6b85; font-size: 15px;">Hi ${escapeHtml(firstName)}, thanks for using our design tool.</p>
+      <p style="color: #1a1a1a; font-size: 15px; line-height: 1.5;">${escapeHtml(nextStep)}</p>
+      ${offerBanner}
+      ${designSummary}
+      <p style="color: #5a6b85; font-size: 13px; margin-top: 24px;">— The Blue Duck Christmas Lights Team</p>
+    </div>
+  `;
+
+  try {
+    const result = await resend.emails.send({
+      from: `Blue Duck Christmas Lights <${FROM_EMAIL}>`,
+      to: lead.email,
+      subject,
+      html,
+    });
+
+    if (result.error) {
+      console.error("Resend API returned an error sending customer confirmation email:", result.error);
+      return { ok: false, error: result.error };
+    }
+
+    return { ok: true, id: result.data?.id };
+  } catch (err) {
+    console.error("Failed to send customer confirmation email:", err);
     return { ok: false, error: err.message };
   }
 }

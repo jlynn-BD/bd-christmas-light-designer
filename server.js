@@ -8,7 +8,7 @@ import crypto from "crypto";
 import pg from "pg";
 import { GoogleGenAI } from "@google/genai";
 import { generateLeadPdf } from "./lead-pdf.js";
-import { sendLeadEmail } from "./lead-email.js";
+import { sendLeadEmail, sendCustomerConfirmationEmail } from "./lead-email.js";
 import { syncLeadToCrm } from "./lead-crm.js";
 
 const app = express();
@@ -342,6 +342,10 @@ app.post("/api/leads", async (req, res) => {
     .catch((err) => console.error("Failed to generate/send lead PDF for", leadId, ":", err));
 
   syncLeadToCrm(record).catch((err) => console.error("Failed to sync lead to CRM for", leadId, ":", err));
+
+  sendCustomerConfirmationEmail({ lead: record }).catch((err) =>
+    console.error("Failed to send customer confirmation email for", leadId, ":", err)
+  );
 });
 
 app.post("/api/generate-all", upload.single("image"), async (req, res) => {
