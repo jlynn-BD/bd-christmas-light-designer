@@ -1000,8 +1000,11 @@ setupAddressAutocomplete(commAddress, document.getElementById("commAddressSugges
 // When embedded in an iframe (e.g. on the main WordPress site), tell the parent page how
 // tall the content is so it can resize the iframe instead of showing a nested scrollbar.
 if (window.parent !== window) {
+  // Measure the body itself: min-height: 100vh and documentElement.scrollHeight both track the
+  // iframe's own height, so the iframe could grow but never shrink back.
+  document.body.style.minHeight = "0";
   const reportHeight = () => {
-    window.parent.postMessage({ type: "blueduck-widget-resize", height: document.documentElement.scrollHeight }, "*");
+    window.parent.postMessage({ type: "blueduck-widget-resize", height: document.body.scrollHeight }, "*");
   };
   new ResizeObserver(reportHeight).observe(document.body);
   window.addEventListener("load", reportHeight);
