@@ -298,6 +298,7 @@ const PACKAGES = [
     name: "Cousin Eddie Package",
     subtitle: null,
     features: ["Roofline"],
+    heroImage: "package-hero-1.png",
   },
   {
     key: "package2",
@@ -305,20 +306,25 @@ const PACKAGES = [
     subtitle: "Most Popular",
     popular: true,
     features: ["Roofline", "Wreath"],
+    heroImage: "package-hero-2.png",
   },
   {
     key: "package3",
     name: "Santa's Favorite",
     subtitle: null,
     features: ["Roofline", "Wreath", "Trees and Shrubs"],
+    heroImage: "package-hero-3.png",
   },
   {
     key: "package4",
     name: "Clark Griswold Package",
     subtitle: null,
     features: ["Roofline", "Wreath", "Trees and Shrubs", "Driveway Stake Lighting", "Sidewalk Stake Lighting"],
+    heroImage: "package-hero-4.png",
   },
 ];
+
+const DEFAULT_PACKAGE_HERO_IMAGE = "package-hero-4.png";
 
 const FEATURE_LEGEND = {
   Roofline: { number: 1, color: "#86b83e" },
@@ -607,7 +613,7 @@ backToStylesBtn.addEventListener("click", () => {
 function openPackagePanel() {
   chosenPackage = null;
   packageContinueBtn.disabled = true;
-  packageHeroImg.src = "dream-display.png";
+  packageHeroImg.src = DEFAULT_PACKAGE_HERO_IMAGE;
   renderPackageCards();
   showPackage();
 }
@@ -660,6 +666,7 @@ function selectPackage(pkg, card) {
   card.classList.add("selected");
   chosenPackage = pkg;
   packageContinueBtn.disabled = false;
+  if (pkg.heroImage) packageHeroImg.src = pkg.heroImage;
 }
 
 packageContinueBtn.addEventListener("click", () => {
