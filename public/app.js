@@ -33,8 +33,21 @@ function setProgressStep(stepKey) {
   });
 }
 
+// Every step change must land at the top of the screen. Two things made this unreliable on
+// phones: smooth scrolling gets cancelled by iOS Safari when the layout shrinks mid-animation,
+// and inside the embedded iframe (sized to its full content) scrolling the iframe's own window
+// does nothing — the parent page has to scroll the iframe back into view instead.
 function scrollToTop() {
-  window.scrollTo({ top: 0, behavior: "smooth" });
+  const jump = () => {
+    window.scrollTo(0, 0);
+    document.documentElement.scrollTop = 0;
+    document.body.scrollTop = 0;
+    if (window.parent !== window) {
+      window.parent.postMessage({ type: "blueduck-widget-scroll-top" }, "*");
+    }
+  };
+  jump();
+  requestAnimationFrame(() => requestAnimationFrame(jump));
 }
 
 function hideAllStepPanels() {
@@ -450,6 +463,7 @@ async function checkZip() {
       verifiedZip = zip;
       gatePanel.hidden = true;
       propertyTypePanel.hidden = false;
+      scrollToTop();
     } else {
       setGateMsg(
         `Sorry, we don't currently service ZIP code ${zip}. Blue Duck Christmas Lights serves the greater ` +
@@ -473,15 +487,18 @@ residentialBtn.addEventListener("click", () => {
   propertyTypePanel.hidden = true;
   appContent.hidden = false;
   headerPromo.hidden = false;
+  document.body.classList.add("in-wizard");
   progressBar.hidden = false;
   thankYouPanel.hidden = true;
   setProgressStep("design");
+  scrollToTop();
 });
 
 commercialBtn.addEventListener("click", () => {
   propertyTypePanel.hidden = true;
   commercialPanel.hidden = false;
   headerPromo.hidden = true;
+  scrollToTop();
 });
 
 commercialForm.addEventListener("submit", async (e) => {
@@ -512,6 +529,7 @@ commercialForm.addEventListener("submit", async (e) => {
       "🎉 Thank you! Your information has been submitted. A member of the Blue Duck Christmas Lights team " +
         "will contact you shortly to schedule your consultation."
     );
+    scrollToTop();
   } catch (err) {
     setCommMsg(err.message, true);
   } finally {

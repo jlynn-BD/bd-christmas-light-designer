@@ -939,3 +939,28 @@ button:not(:disabled):hover {
 .style-placeholder {
   font-size: 0.9rem;
 }
+
+/* On phones, once the customer is inside the wizard, shrink the page header so each step's
+   heading, instructions and the 50% offer line sit in the first screen instead of below the fold. */
+@media (max-width: 640px) {
+  body.in-wizard header {
+    padding: 1rem 1rem 0.25rem;
+    gap: 0.4rem;
+  }
+
+  body.in-wizard header img.logo {
+    height: 64px;
+  }
+
+  body.in-wizard header h1 {
+    font-size: 1.3rem;
+  }
+
+  body.in-wizard header > p:not(.header-promo) {
+    display: none;
+  }
+
+  body.in-wizard main {
+    padding-top: 1rem;
+  }
+}
