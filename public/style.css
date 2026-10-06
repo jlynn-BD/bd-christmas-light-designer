@@ -964,3 +964,171 @@ button:not(:disabled):hover {
     padding-top: 1rem;
   }
 }
+
+/* ---------- Mobile / touch optimization ---------- */
+
+html {
+  -webkit-text-size-adjust: 100%;
+}
+
+button,
+a,
+.progress-step,
+.package-card,
+.upload-box,
+.contact-pref-option {
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* Let a thumb swipe over the photo scroll the page; only the decorations themselves capture touch. */
+.decor-canvas-wrap {
+  touch-action: pan-y;
+}
+
+/* Close button pinned to the screen corner so it can never sit off-screen on a tall image. */
+.lightbox-close {
+  position: fixed;
+  top: 12px;
+  right: 12px;
+  width: 44px;
+  height: 44px;
+  font-size: 1.1rem;
+  z-index: 2;
+}
+
+.package-continue-top {
+  display: none;
+}
+
+@media (max-width: 640px) {
+  .gate-zip-row input {
+    min-width: 0;
+  }
+
+  main {
+    padding: 1rem 0.75rem;
+    gap: 1.25rem;
+  }
+
+  #appContent {
+    gap: 1.25rem;
+  }
+
+  /* Win back horizontal room: panels were inset ~56px per side, leaving ~263px for form fields. */
+  .gate-panel,
+  .approval-panel,
+  .customize-panel,
+  .package-panel,
+  .lead-panel {
+    padding: 1.25rem 1rem;
+  }
+
+  .thankyou-panel {
+    padding: 1.75rem 1.25rem;
+  }
+
+  .controls {
+    padding: 1.1rem;
+  }
+
+  .promo-banner {
+    padding: 1.1rem;
+  }
+
+  /* The progress bar was wider than a phone screen (5 x 72px steps) and made the page scroll sideways. */
+  .progress-step {
+    width: 3.4rem;
+  }
+
+  .step-circle {
+    width: 28px;
+    height: 28px;
+    font-size: 0.78rem;
+  }
+
+  .step-name {
+    font-size: 0.68rem;
+  }
+
+  .progress-connector {
+    min-width: 4px;
+    margin-top: 14px;
+  }
+
+  /* Bigger tap area for the clickable (completed) steps without changing the layout. */
+  .progress-step {
+    position: relative;
+  }
+
+  .progress-step.completed::after {
+    content: "";
+    position: absolute;
+    inset: -8px -2px -6px;
+  }
+
+  .package-continue-top {
+    display: block;
+    width: 100%;
+    margin: 0.9rem 0 0;
+  }
+
+  .package-continue-top[hidden] {
+    display: none !important;
+  }
+}
+
+@media (max-width: 360px) {
+  .progress-step {
+    width: 3.1rem;
+  }
+
+  .step-name {
+    font-size: 0.64rem;
+  }
+
+  header h1 {
+    font-size: 1.5rem;
+  }
+}
+
+/* Touch devices and phones: comfortable tap targets (Apple/Google recommend at least 44px). */
+@media (max-width: 640px), (pointer: coarse) {
+  button,
+  .lead-form input,
+  .gate-zip-row input {
+    min-height: 44px;
+  }
+
+  .link-btn {
+    min-height: 44px;
+    padding: 0.7rem 1rem;
+  }
+
+  .address-suggestions li {
+    padding: 0.8rem 0.75rem;
+    min-height: 44px;
+  }
+
+  .decor-remove {
+    width: 28px;
+    height: 28px;
+    top: -12px;
+    right: -12px;
+    font-size: 0.85rem;
+  }
+
+  .decor-resize-handle {
+    width: 28px;
+    height: 28px;
+    bottom: -12px;
+    right: -12px;
+  }
+
+  .decor-remove::after,
+  .decor-resize-handle::after {
+    content: "";
+    position: absolute;
+    inset: -8px;
+  }
+}

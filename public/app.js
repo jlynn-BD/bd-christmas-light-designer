@@ -37,17 +37,29 @@ function setProgressStep(stepKey) {
 // phones: smooth scrolling gets cancelled by iOS Safari when the layout shrinks mid-animation,
 // and inside the embedded iframe (sized to its full content) scrolling the iframe's own window
 // does nothing — the parent page has to scroll the iframe back into view instead.
-function scrollToTop() {
+function scrollToY(y = 0) {
   const jump = () => {
-    window.scrollTo(0, 0);
-    document.documentElement.scrollTop = 0;
-    document.body.scrollTop = 0;
+    window.scrollTo(0, y);
+    document.documentElement.scrollTop = y;
+    document.body.scrollTop = y;
     if (window.parent !== window) {
-      window.parent.postMessage({ type: "blueduck-widget-scroll-top" }, "*");
+      window.parent.postMessage({ type: "blueduck-widget-scroll-top", offset: y }, "*");
     }
   };
   jump();
   requestAnimationFrame(() => requestAnimationFrame(jump));
+}
+
+function scrollToTop() {
+  scrollToY(0);
+}
+
+function scrollToElement(el, margin = 12) {
+  scrollToY(Math.max(0, el.getBoundingClientRect().top + window.scrollY - margin));
+}
+
+function isPhone() {
+  return window.matchMedia("(max-width: 640px)").matches;
 }
 
 function hideAllStepPanels() {
@@ -301,6 +313,7 @@ const packagePanel = document.getElementById("packagePanel");
 const packageHeroImg = document.getElementById("packageHeroImg");
 const packageGrid = document.getElementById("packageGrid");
 const packageContinueBtn = document.getElementById("packageContinueBtn");
+const packageContinueTopBtn = document.getElementById("packageContinueTopBtn");
 const backToApprovalBtn = document.getElementById("backToApprovalBtn");
 const backToPackageBtn = document.getElementById("backToPackageBtn");
 const chosenPackageLabel = document.getElementById("chosenPackageLabel");
@@ -311,7 +324,7 @@ const PACKAGES = [
     name: "Cousin Eddie Package",
     subtitle: null,
     features: ["Roofline"],
-    heroImage: "package-hero-1.png",
+    heroImage: "package-hero-1.jpg",
   },
   {
     key: "package2",
@@ -319,25 +332,25 @@ const PACKAGES = [
     subtitle: "Most Popular",
     popular: true,
     features: ["Roofline", "Wreath"],
-    heroImage: "package-hero-2.png",
+    heroImage: "package-hero-2.jpg",
   },
   {
     key: "package3",
     name: "Santa's Favorite",
     subtitle: null,
     features: ["Roofline", "Wreath", "Trees and Shrubs"],
-    heroImage: "package-hero-3.png",
+    heroImage: "package-hero-3.jpg",
   },
   {
     key: "package4",
     name: "Clark Griswold Package",
     subtitle: null,
     features: ["Roofline", "Wreath", "Trees and Shrubs", "Driveway Stake Lighting", "Sidewalk Stake Lighting"],
-    heroImage: "package-hero-4.png",
+    heroImage: "package-hero-4.jpg",
   },
 ];
 
-const DEFAULT_PACKAGE_HERO_IMAGE = "package-hero-4.png";
+const DEFAULT_PACKAGE_HERO_IMAGE = "package-hero-4.jpg";
 
 const FEATURE_LEGEND = {
   Roofline: { number: 1, color: "#86b83e" },
@@ -631,6 +644,7 @@ backToStylesBtn.addEventListener("click", () => {
 function openPackagePanel() {
   chosenPackage = null;
   packageContinueBtn.disabled = true;
+  packageContinueTopBtn.hidden = true;
   packageHeroImg.src = DEFAULT_PACKAGE_HERO_IMAGE;
   renderPackageCards();
   showPackage();
@@ -684,13 +698,21 @@ function selectPackage(pkg, card) {
   card.classList.add("selected");
   chosenPackage = pkg;
   packageContinueBtn.disabled = false;
+  packageContinueTopBtn.hidden = false;
+  packageContinueTopBtn.textContent = `Continue with ${pkg.name} →`;
   if (pkg.heroImage) packageHeroImg.src = pkg.heroImage;
+
+  // On a phone the cards sit below the image, so the new image would change out of sight.
+  // Bring it into view, with the Continue button right underneath.
+  if (isPhone()) scrollToElement(packageHeroImg.parentElement, 12);
 }
 
 packageContinueBtn.addEventListener("click", () => {
   if (!chosenPackage) return;
   revealLeadPanel();
 });
+
+packageContinueTopBtn.addEventListener("click", () => packageContinueBtn.click());
 
 backToApprovalBtn.addEventListener("click", () => {
   goToStep(chosenStyle && chosenStyle.customized ? "lighting" : "confirm");
@@ -886,7 +908,7 @@ async function flattenDesign() {
     ctx.drawImage(img, centerX - w / 2, centerY - h / 2, w, h);
   }
 
-  return canvas.toDataURL("image/png");
+  return canvas.toDataURL("image/jpeg", 0.92);
 }
 
 leadForm.addEventListener("submit", async (e) => {
@@ -937,12 +959,46 @@ function setLeadMsg(message, isError = false) {
   leadMsg.classList.toggle("error", isError);
 }
 
-fileInput.addEventListener("change", () => {
-  const file = fileInput.files[0];
-  if (!file) return;
+// Phone photos are routinely 4-12MB, which is slow (and fragile) to upload over cellular, and
+// iPhone photos carry rotation metadata. Redraw to a sensible size, which also bakes in the
+// correct orientation. If the browser can't decode the file (e.g. HEIC outside Safari), fall
+// back to uploading the original untouched.
+async function downscaleImage(file, maxDim = 2048, quality = 0.9) {
+  try {
+    const url = URL.createObjectURL(file);
+    const img = await new Promise((resolve, reject) => {
+      const el = new Image();
+      el.onload = () => resolve(el);
+      el.onerror = reject;
+      el.src = url;
+    });
+    URL.revokeObjectURL(url);
+
+    const scale = Math.min(1, maxDim / Math.max(img.naturalWidth, img.naturalHeight));
+    const canvas = document.createElement("canvas");
+    canvas.width = Math.round(img.naturalWidth * scale);
+    canvas.height = Math.round(img.naturalHeight * scale);
+    canvas.getContext("2d").drawImage(img, 0, 0, canvas.width, canvas.height);
+
+    const blob = await new Promise((resolve) => canvas.toBlob(resolve, "image/jpeg", quality));
+    if (!blob) return file;
+    const baseName = file.name.replace(/\.[^.]+$/, "") || "photo";
+    return new File([blob], `${baseName}.jpg`, { type: "image/jpeg" });
+  } catch {
+    return file;
+  }
+}
+
+fileInput.addEventListener("change", async () => {
+  const original = fileInput.files[0];
+  if (!original) return;
+
+  generateBtn.disabled = true;
+  uploadLabel.textContent = "Preparing your photo…";
+  const file = await downscaleImage(original);
 
   selectedFile = file;
-  uploadLabel.textContent = file.name;
+  uploadLabel.textContent = original.name;
   generateBtn.disabled = false;
 
   const reader = new FileReader();
@@ -975,6 +1031,7 @@ generateBtn.addEventListener("click", async () => {
   setStatus(`🎄 Hanging your lights in ${styles.length} styles... this can take a minute or two.`);
   renderCards("loading");
   startLoadingQuoteRotation();
+  if (isPhone()) scrollToElement(statusMsg, 16);
 
   try {
     const formData = new FormData();
@@ -1002,8 +1059,14 @@ generateBtn.addEventListener("click", async () => {
         ? "🎉 Your home is ready for the holidays!"
         : `Done — ${data.results.length - failures} of ${data.results.length} styles generated.`
     );
+    if (isPhone() && failures < data.results.length) scrollToElement(statusMsg, 16);
   } catch (err) {
-    setStatus(err.message, true);
+    setStatus(
+      err instanceof TypeError
+        ? "We lost your connection while creating your designs — please check your signal and try again."
+        : err.message,
+      true
+    );
     renderCards("idle");
   } finally {
     stopLoadingQuoteRotation();
@@ -1034,4 +1097,14 @@ if (window.parent !== window) {
   new ResizeObserver(reportHeight).observe(document.body);
   window.addEventListener("load", reportHeight);
   reportHeight();
+}
+
+// Phones: a keyboard that pops open on page load covers the screen (and inside the embedded
+// widget it can yank the host page's scroll position), so only auto-focus on a real desktop.
+if (window.parent === window && window.matchMedia("(hover: hover) and (pointer: fine)").matches) {
+  zipInput.focus();
+}
+
+if (window.matchMedia("(pointer: coarse)").matches) {
+  uploadLabel.textContent = "📸 Tap to upload a photo of your home";
 }

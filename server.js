@@ -7,6 +7,14 @@ import path from "path";
 import crypto from "crypto";
 import pg from "pg";
 import { GoogleGenAI } from "@google/genai";
+// Loaded lazily: sharp ships a native binary, and if it ever fails to load on the host the app
+// must still run — we'd just serve the model's original (larger) PNGs.
+const sharpPromise = import("sharp")
+  .then((m) => m.default)
+  .catch((err) => {
+    console.error("sharp unavailable — AI previews will not be compressed:", err);
+    return null;
+  });
 import { generateLeadPdf } from "./lead-pdf.js";
 import { sendLeadEmail, sendCustomerConfirmationEmail } from "./lead-email.js";
 import { syncLeadToCrm } from "./lead-crm.js";
@@ -114,7 +122,17 @@ const STYLES = [
 ];
 
 app.use(cors());
-app.use(express.static("public"));
+// Images never change under the same filename, so let phones cache them for a week (the HTML,
+// JS and CSS keep default revalidation so deploys show up immediately).
+app.use(
+  express.static("public", {
+    setHeaders(res, filePath) {
+      if (/\.(png|jpe?g|webp)$/i.test(filePath)) {
+        res.setHeader("Cache-Control", "public, max-age=604800");
+      }
+    },
+  })
+);
 
 function buildPrompt(lightDescription) {
   return (
@@ -226,7 +244,19 @@ async function generateStyledImage(fileBuffer, mimeType, lightDescription) {
     throw new Error(lastTextReply ? `Model returned no image: ${lastTextReply}` : "Model returned no image.");
   }
 
-  return `data:${imagePart.inlineData.mimeType};base64,${imagePart.inlineData.data}`;
+  // The model returns ~2.5-3MB PNGs; four of those is a ~12MB response (and a ~12MB database row
+  // per lead) on a phone's cellular connection. A q90 JPEG is visually identical at ~1/7 the size.
+  try {
+    const sharp = await sharpPromise;
+    if (!sharp) throw new Error("sharp not loaded");
+    const jpeg = await sharp(Buffer.from(imagePart.inlineData.data, "base64"))
+      .jpeg({ quality: 90, chromaSubsampling: "4:4:4", mozjpeg: true })
+      .toBuffer();
+    return `data:image/jpeg;base64,${jpeg.toString("base64")}`;
+  } catch (err) {
+    console.error("JPEG conversion failed, returning original image:", err);
+    return `data:${imagePart.inlineData.mimeType};base64,${imagePart.inlineData.data}`;
+  }
 }
 
 app.use(express.json({ limit: "30mb" }));

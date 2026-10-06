@@ -3,6 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="theme-color" content="#0d1f3a" />
   <title>Blue Duck Christmas Lights</title>
   <link rel="icon" href="blue-duck-logo.png" />
   <link rel="stylesheet" href="style.css" />
@@ -22,7 +23,7 @@
 
       <div class="gate-zip">
         <div class="gate-zip-row">
-          <input type="text" id="zipInput" inputmode="numeric" maxlength="5" placeholder="46032" autofocus />
+          <input type="text" id="zipInput" inputmode="numeric" autocomplete="postal-code" enterkeyhint="go" maxlength="5" placeholder="46032" />
           <button id="zipSubmitBtn">Check My Area</button>
         </div>
       </div>
@@ -180,6 +181,8 @@
         <div class="package-hero">
           <img id="packageHeroImg" alt="Example of a complete Blue Duck holiday lighting display" />
         </div>
+
+        <button type="button" id="packageContinueTopBtn" class="package-continue-top" hidden>Continue →</button>
 
         <p class="package-cta">👇 Select the package you like best to continue</p>
 
