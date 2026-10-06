@@ -34,9 +34,10 @@ const CONFIG = {
   genBurstPerMin: num("GEN_BURST_PER_MIN", 10),
   leadsPerHour: num("LEADS_PER_IP_PER_HOUR", 10),
   apiPerMin: num("API_REQUESTS_PER_MIN", 90),
-  // How many reverse proxies sit in front of the app and append to X-Forwarded-For. The client IP is
+  // How many reverse proxies sit in front of the app and append to X-Forwarded-For (Render + Cloudflare = 2,
+  // verified live: chain is "<spoofable>, <real client>, <cloudflare edge>"). The client IP is
   // the entry that many places from the RIGHT (anything further left is client-supplied and spoofable).
-  trustedProxyHops: num("TRUSTED_PROXY_HOPS", 1),
+  trustedProxyHops: num("TRUSTED_PROXY_HOPS", 2),
 };
 
 const SUPPORT_EMAIL = "hello@trustblueduck.com";
