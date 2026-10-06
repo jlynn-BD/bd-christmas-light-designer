@@ -273,7 +273,15 @@ app.use(express.json({ limit: "20kb" }));
 // RATE_LIMIT_ALLOWLIST for internal testing. Reveals nothing beyond the caller's own address.
 app.get("/api/client-info", (req, res) => {
   const ip = getClientIp(req);
-  res.json({ ip, allowlisted: isAllowlisted(ip) });
+  // forwardedFor is only the caller's own request header chain — included so the proxy-hop
+  // setting (TRUSTED_PROXY_HOPS) can be verified against the real hosting setup.
+  res.json({
+    ip,
+    allowlisted: isAllowlisted(ip),
+    forwardedFor: req.headers["x-forwarded-for"] ?? null,
+    cfConnectingIp: req.headers["cf-connecting-ip"] ?? null,
+    trueClientIp: req.headers["true-client-ip"] ?? null,
+  });
 });
 
 app.get("/api/styles", (req, res) => {
