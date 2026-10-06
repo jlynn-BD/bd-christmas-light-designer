@@ -965,6 +965,16 @@ button:not(:disabled):hover {
   }
 }
 
+/* ---------- Bot trap: invisible to people, tempting to form-filling bots. ---------- */
+.hp-field {
+  position: absolute !important;
+  left: -10000px;
+  top: auto;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+}
+
 /* ---------- Mobile / touch optimization ---------- */
 
 html {

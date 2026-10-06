@@ -530,11 +530,12 @@ commercialForm.addEventListener("submit", async (e) => {
         phone: commPhone.value.trim(),
         email: commEmail.value.trim(),
         zip: verifiedZip,
+        website: document.getElementById("commWebsite").value,
         propertyType: "commercial",
       }),
     });
 
-    const data = await res.json();
+    const data = await readJson(res);
     if (!res.ok) throw new Error(data.error || "Failed to submit your request.");
 
     commercialForm.hidden = true;
@@ -930,6 +931,7 @@ leadForm.addEventListener("submit", async (e) => {
         phone: leadPhone.value.trim(),
         email: leadEmail.value.trim(),
         zip: verifiedZip,
+        website: document.getElementById("leadWebsite").value,
         propertyType: "residential",
         contactPreference,
         styleKey: chosenStyle.key,
@@ -943,7 +945,7 @@ leadForm.addEventListener("submit", async (e) => {
       }),
     });
 
-    const data = await res.json();
+    const data = await readJson(res);
     if (!res.ok) throw new Error(data.error || "Failed to submit your request.");
 
     showThankYou(contactPreference);
@@ -1043,7 +1045,7 @@ generateBtn.addEventListener("click", async () => {
       body: formData,
     });
 
-    const data = await response.json();
+    const data = await readJson(response);
 
     if (!response.ok) {
       throw new Error(data.error || "Failed to generate previews.");
@@ -1054,11 +1056,15 @@ generateBtn.addEventListener("click", async () => {
     }
 
     const failures = data.results.filter((r) => r.error).length;
-    setStatus(
+    let doneMsg =
       failures === 0
         ? "🎉 Your home is ready for the holidays!"
-        : `Done — ${data.results.length - failures} of ${data.results.length} styles generated.`
-    );
+        : `Done — ${data.results.length - failures} of ${data.results.length} styles generated.`;
+    // Fair warning before a visitor hits the daily preview limit.
+    if (typeof data.previewsRemaining === "number" && data.previewsRemaining <= 2) {
+      doneMsg += ` (${data.previewsRemaining} design preview${data.previewsRemaining === 1 ? "" : "s"} left today.)`;
+    }
+    setStatus(doneMsg);
     if (isPhone() && failures < data.results.length) scrollToElement(statusMsg, 16);
   } catch (err) {
     setStatus(
@@ -1073,6 +1079,21 @@ generateBtn.addEventListener("click", async () => {
     generateBtn.disabled = false;
   }
 });
+
+// Throttled/overloaded responses can come back from the host as plain text rather than our JSON —
+// never let that surface as a cryptic "Unexpected token" error.
+async function readJson(response) {
+  try {
+    return await response.json();
+  } catch {
+    return {
+      error:
+        response.status === 429 || response.status === 503
+          ? "We're getting a lot of traffic right now — please try again in a minute."
+          : "Something went wrong on our end. Please try again.",
+    };
+  }
+}
 
 function setStatus(message, isError = false) {
   statusMsg.textContent = message;

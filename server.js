@@ -18,6 +18,7 @@ const sharpPromise = import("sharp")
 import { generateLeadPdf } from "./lead-pdf.js";
 import { sendLeadEmail, sendCustomerConfirmationEmail } from "./lead-email.js";
 import { syncLeadToCrm } from "./lead-crm.js";
+import { apiGuard, generationGuard, leadsGuard, getClientIp, isAllowlisted, initAbuseGuard } from "./abuse-guard.js";
 
 const app = express();
 const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 15 * 1024 * 1024 } });
@@ -61,6 +62,7 @@ async function ensureLeadsTable() {
   await pool.query(`ALTER TABLE leads ADD COLUMN IF NOT EXISTS contact_preference TEXT`);
 }
 ensureLeadsTable().catch((err) => console.error("Failed to ensure leads table exists:", err));
+initAbuseGuard(pool);
 
 const APPROVED_ZIPS = new Set([
   "46032", "46033", "46034", "46037", "46038", "46040", "46055", "46060", "46062",
@@ -259,7 +261,20 @@ async function generateStyledImage(fileBuffer, mimeType, lightDescription) {
   }
 }
 
-app.use(express.json({ limit: "30mb" }));
+// Guards run BEFORE body parsing so a throttled request never costs us the upload/JSON parse.
+// Only /api/leads legitimately carries big payloads (the house photo + rendered design as data URLs);
+// everything else gets a tiny body limit.
+app.use("/api", apiGuard);
+app.post("/api/leads", leadsGuard);
+app.use("/api/leads", express.json({ limit: "30mb" }));
+app.use(express.json({ limit: "20kb" }));
+
+// Echoes back the address the server sees for the caller — handy for finding the IP to add to
+// RATE_LIMIT_ALLOWLIST for internal testing. Reveals nothing beyond the caller's own address.
+app.get("/api/client-info", (req, res) => {
+  const ip = getClientIp(req);
+  res.json({ ip, allowlisted: isAllowlisted(ip) });
+});
 
 app.get("/api/styles", (req, res) => {
   res.json({ styles: STYLES.map(({ key, label }) => ({ key, label })) });
@@ -282,10 +297,27 @@ function saveDataUrlImage(dataUrl, destPathWithoutExt) {
 
 app.post("/api/leads", async (req, res) => {
   const body = req.body ?? {};
+
+  // Honeypot: real visitors never see or fill this hidden field, bots usually do. Pretend it
+  // worked so the bot doesn't learn anything, but save nothing and notify nobody.
+  if (String(body.website ?? "").trim()) {
+    console.warn(`[abuse-guard] honeypot tripped ip=${getClientIp(req)}`);
+    return res.json({ ok: true, leadId: "ok" });
+  }
+
   const requiredFields = ["name", "address", "phone", "email"];
   const missing = requiredFields.filter((f) => !String(body[f] ?? "").trim());
   if (missing.length) {
     return res.status(400).json({ error: `Missing required field(s): ${missing.join(", ")}` });
+  }
+  if (requiredFields.some((f) => String(body[f]).length > 300)) {
+    return res.status(400).json({ error: "One of the fields you entered is too long." });
+  }
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(body.email).trim())) {
+    return res.status(400).json({ error: "Please enter a valid email address." });
+  }
+  if (String(body.phone).replace(/\D/g, "").length < 7) {
+    return res.status(400).json({ error: "Please enter a valid phone number." });
   }
 
   const leadId = `${Date.now()}-${crypto.randomBytes(4).toString("hex")}`;
@@ -378,7 +410,7 @@ app.post("/api/leads", async (req, res) => {
   );
 });
 
-app.post("/api/generate-all", upload.single("image"), async (req, res) => {
+app.post("/api/generate-all", generationGuard, upload.single("image"), async (req, res) => {
   if (!process.env.GEMINI_API_KEY) {
     return res.status(500).json({ error: "Server is missing GEMINI_API_KEY. Add it to .env and restart." });
   }
@@ -389,7 +421,27 @@ app.post("/api/generate-all", upload.single("image"), async (req, res) => {
     return res.status(400).json({ error: "No image uploaded." });
   }
 
+  // Reject non-photos before spending any paid AI calls on them (and without using up the visitor's
+  // allowance — an attempt only counts once we actually start generating).
   const { buffer, mimetype } = req.file;
+  if (!/^image\//.test(mimetype)) {
+    return res.status(400).json({ error: "Please upload a photo (JPG or PNG) of your home." });
+  }
+  const sharp = await sharpPromise;
+  if (sharp) {
+    try {
+      const meta = await sharp(buffer).metadata();
+      if (!meta.width || !meta.height || meta.width < 200 || meta.height < 200 || meta.width * meta.height > 100e6) {
+        return res
+          .status(400)
+          .json({ error: "That photo is too small or too large to use. Please upload a regular photo of your home." });
+      }
+    } catch {
+      return res.status(400).json({ error: "We couldn't read that file. Please upload a JPG or PNG photo of your home." });
+    }
+  }
+
+  req.abuse.commit();
 
   const settled = await Promise.allSettled(
     STYLES.map((style, i) =>
@@ -404,7 +456,25 @@ app.post("/api/generate-all", upload.single("image"), async (req, res) => {
       : { key: style.key, label: style.label, error: outcome.reason?.message ?? "Failed to generate this style." };
   });
 
-  res.json({ results });
+  // If every style failed (e.g. an upstream outage), that's on us — don't charge the visitor's allowance.
+  if (results.every((r) => r.error)) req.abuse.refund();
+
+  res.json({ results, previewsRemaining: req.abuse.remaining() });
+});
+
+// Keep errors from body parsing / uploads as clean JSON the front end can show.
+app.use((err, req, res, next) => {
+  if (res.headersSent) return next(err);
+  const tooBig = err?.type === "entity.too.large" || err?.code === "LIMIT_FILE_SIZE";
+  const status = tooBig ? 413 : err?.status && err.status < 500 ? err.status : 500;
+  if (status === 500) console.error("Unhandled error:", err);
+  res.status(status).json({
+    error: tooBig
+      ? "That file is too large. Please upload a smaller photo."
+      : status === 500
+        ? "Something went wrong on our end. Please try again."
+        : "We couldn't process that request.",
+  });
 });
 
 const port = process.env.PORT || 3000;
