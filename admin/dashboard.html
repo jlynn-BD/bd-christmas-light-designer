@@ -64,6 +64,15 @@
     .legend { color: var(--muted); font-size: 0.78rem; margin-top: 6px; }
     .empty { color: var(--muted); padding: 24px 0; text-align: center; }
     .note { color: var(--muted); font-size: 0.8rem; }
+    .print-title { display: none; }
+    @media print {
+      :root { --bg: #fff; --panel: #fff; --panel-2: #f1f4fa; --line: #cfd6e4; --text: #14233f; --muted: #55657f; --bar: #3b78d8; }
+      body { background: #fff; }
+      .filters { display: none; }
+      .card, .tile { break-inside: avoid; }
+      .print-title { display: block; color: var(--muted); font-size: 0.85rem; margin-bottom: 10px; }
+      .bar-track { border: 1px solid var(--line); }
+    }
     @media (max-width: 600px) { h1 { font-size: 1.25rem; } .tile .n { font-size: 1.5rem; } }
   </style>
 </head>
@@ -88,8 +97,11 @@
       </select>
       <label class="chk"><input type="checkbox" id="internal" /> Include staff testing</label>
       <button id="refresh" type="button">Refresh</button>
+      <button id="csv" type="button" disabled>Download CSV</button>
+      <button id="print" type="button" disabled>Print / Save as PDF</button>
     </div>
 
+    <p class="print-title" id="printTitle"></p>
     <div id="content"><p class="empty">Loading…</p></div>
   </div>
 
@@ -117,7 +129,57 @@ function listCard(title, items, emptyText = "Nothing yet") {
   return el("div", { class: "card" }, el("h2", {}, title), ul);
 }
 
+let lastReport = null;
+const filterText = () => `${$("range").selectedOptions[0].text} · ${$("device").selectedOptions[0].text}${$("internal").checked ? " · incl. staff testing" : ""}`;
+
+function csvCell(v) {
+  const t = String(v ?? "");
+  return /[",\n]/.test(t) ? `"${t.replace(/"/g, '""')}"` : t;
+}
+function downloadCsv() {
+  const r = lastReport;
+  if (!r) return;
+  const lines = [];
+  const add = (...cells) => lines.push(cells.map(csvCell).join(","));
+  add("Blue Duck customer journey report");
+  add("Period", filterText());
+  add("Generated", new Date(r.generatedAt).toLocaleString());
+  add();
+  add("SUMMARY");
+  add("Visits", r.totals.visits); add("Submitted a request", r.totals.converted); add("Overall conversion %", r.totals.conversionPct);
+  add("Residential leads", r.totals.residentialLeads); add("Commercial requests", r.totals.commercialLeads);
+  add("Left without submitting", r.totals.abandoned); add("Still in progress", r.totals.inProgress);
+  add();
+  add("FUNNEL");
+  add("Stage", "Wizard step", "Visits", "% of all visits", "Didn't make it to this stage", "% of previous stage who didn't");
+  r.funnel.forEach((f) => add(f.label, f.wizard ?? "", f.count, f.pctOfStart, f.dropCount ?? "", f.dropPct ?? ""));
+  add();
+  add("WHERE PEOPLE LEAVE - BY WIZARD STEP");
+  add("Wizard step", "People", "% of everyone who left");
+  r.byWizardStep.forEach((w) => add(w.step, w.count, w.shareOfAbandoned));
+  add();
+  add("WHERE PEOPLE LEAVE - SCREEN BY SCREEN");
+  add("Where they left", "Wizard step", "People", "% of everyone who left", "% on phone", "% who hit an error", "Median seconds active", "Errors seen");
+  r.abandonment.forEach((a) => add(a.label, a.wizard ?? "", a.count, a.shareOfAbandoned, a.phonePct, a.sawErrorPct, a.medianSecondsActive == null ? "" : Math.round(a.medianSecondsActive), a.errors.map((e) => `${e.name} x${e.count}`).join("; ")));
+  add();
+  add("AI GENERATION");
+  add("Started", r.generation.started); add("Produced designs", r.generation.completed); add("Failed or blocked", r.generation.failed); add("Typical wait (s)", r.generation.medianSeconds ?? "");
+  add();
+  for (const [title, items] of [["DESIGNS CHOSEN", r.choices.styles], ["PACKAGES CHOSEN", r.choices.packages], ["HOW LEADS WANT TO PROCEED", r.choices.contactPreferences], ["DEVICES", r.audience.devices], ["REFERRERS", r.audience.referrers], ["OUT-OF-AREA ZIP CODES", r.outOfAreaZips]]) {
+    add(title); items.forEach((i) => add(i.name, i.count)); add();
+  }
+  add("DAILY"); add("Date", "Visits", "Submitted"); r.daily.forEach((d) => add(d.date, d.started, d.converted));
+
+  const blob = new Blob(["\ufeff" + lines.join("\r\n")], { type: "text/csv;charset=utf-8" });
+  const a = el("a", { href: URL.createObjectURL(blob), download: `blue-duck-journey-${new Date().toISOString().slice(0, 10)}.csv` });
+  document.body.append(a); a.click(); a.remove();
+}
+
 function render(r) {
+  lastReport = r;
+  $("csv").disabled = !r.totals.visits;
+  $("print").disabled = !r.totals.visits;
+  $("printTitle").textContent = `Blue Duck customer journey — ${filterText()} — generated ${new Date(r.generatedAt).toLocaleString()}`;
   const root = $("content");
   root.replaceChildren();
   $("updated").textContent = `Updated ${new Date(r.generatedAt).toLocaleTimeString()}.`;
@@ -250,6 +312,8 @@ async function load() {
 }
 ["range", "device", "internal"].forEach((id) => $(id).addEventListener("change", load));
 $("refresh").addEventListener("click", load);
+$("csv").addEventListener("click", downloadCsv);
+$("print").addEventListener("click", () => window.print());
 load();
 </script>
 </body>
