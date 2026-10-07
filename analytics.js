@@ -1,5 +1,6 @@
 import crypto from "crypto";
 import { getClientIp, isAllowlisted } from "./abuse-guard.js";
+import { hasTeamSession } from "./team-auth.js";
 
 /**
  * Customer-journey / funnel analytics.
@@ -93,6 +94,9 @@ function isLocalHost(req) {
 /** POST /api/events — always answers 204 quickly; analytics must never get in a visitor's way. */
 export async function ingestEvents(req, res) {
   res.status(204).end();
+
+  // A signed-in Blue Duck team member is never a customer: keep their clicks out of the funnel entirely.
+  if (hasTeamSession(req)) return;
 
   const body = req.body ?? {};
   if (!SID_RE.test(String(body.sid ?? ""))) return;

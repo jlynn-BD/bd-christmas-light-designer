@@ -1,0 +1,28 @@
+.team-body main { max-width: 900px; }
+.internal-badge { display: inline-block; vertical-align: middle; background: #f5c842; color: #16305c; font-size: 0.7rem; font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase; padding: 3px 10px; border-radius: 999px; margin-left: 6px; }
+.team-bar { display: flex; justify-content: center; align-items: center; gap: 14px; margin-top: 10px; flex-wrap: wrap; }
+.usage-chip { font-size: 0.85rem; opacity: 0.85; }
+.team-card { margin-bottom: 1.25rem; }
+.team-card h2 { display: flex; align-items: center; gap: 10px; }
+.team-card h2 .num { display: inline-flex; align-items: center; justify-content: center; width: 28px; height: 28px; border-radius: 50%; background: #f5c842; color: #16305c; font-size: 0.9rem; font-weight: 700; flex: none; }
+.team-fields { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 14px; }
+.team-fields .wide { grid-column: 1 / -1; }
+.team-fields .field input, .team-card textarea, .team-login input { width: 100%; box-sizing: border-box; padding: 0.7rem 0.8rem; font-size: 16px; border-radius: 8px; border: 1px solid #2a4a82; background: #0d1f3a; color: #fff; font-family: inherit; }
+.team-card label small { opacity: 0.7; font-weight: normal; }
+.team-login { display: flex; gap: 10px; flex-wrap: wrap; justify-content: center; }
+.team-login input { max-width: 280px; }
+.chosen-img { display: block; width: 100%; max-height: 520px; object-fit: contain; border-radius: 10px; background: #0d1f3a; }
+.chosen-label { margin: 8px 0 14px; }
+.team-packages { border: 1px solid #2a4a82; border-radius: 10px; padding: 10px 14px 14px; margin: 0 0 14px; }
+.team-packages legend { padding: 0 6px; }
+.team-pkg { display: flex; gap: 10px; align-items: flex-start; padding: 8px 4px; cursor: pointer; border-bottom: 1px dashed #2a4a82; }
+.team-pkg:last-child { border-bottom: 0; }
+.team-pkg input { margin-top: 4px; transform: scale(1.2); }
+.team-pkg .pk-name { font-weight: 600; }
+.team-pkg .pk-feat { display: block; font-size: 0.85rem; opacity: 0.8; }
+.team-check { display: flex; gap: 10px; align-items: flex-start; margin: 4px 0 14px; cursor: pointer; }
+.team-check input { margin-top: 4px; transform: scale(1.2); }
+.team-lightbox { position: fixed; inset: 0; background: rgba(0,0,0,0.88); display: flex; align-items: center; justify-content: center; z-index: 50; padding: 12px; cursor: zoom-out; }
+.team-lightbox[hidden] { display: none; }
+.team-lightbox img { max-width: 100%; max-height: 100%; border-radius: 8px; }
+@media (max-width: 640px) { .team-fields { grid-template-columns: 1fr; } }

@@ -18,6 +18,7 @@ const sharpPromise = import("sharp")
 import { generateLeadPdf } from "./lead-pdf.js";
 import { sendLeadEmail, sendCustomerConfirmationEmail } from "./lead-email.js";
 import { syncLeadToCrm } from "./lead-crm.js";
+import { registerTeamRoutes } from "./team.js";
 import { initAnalytics, ingestEvents, reportHandler, adminAuth } from "./analytics.js";
 import { apiGuard, generationGuard, leadsGuard, getClientIp, isAllowlisted, initAbuseGuard } from "./abuse-guard.js";
 
@@ -262,6 +263,9 @@ async function generateStyledImage(fileBuffer, mimeType, lightDescription) {
     return `data:${imagePart.inlineData.mimeType};base64,${imagePart.inlineData.data}`;
   }
 }
+
+// Internal sales tool (/team). Registered before the global body parser because it sets its own limits.
+registerTeamRoutes(app, { express, upload, STYLES, generateStyledImage, sharpPromise: sharpPromise, pool, offer: CURRENT_OFFER });
 
 // Guards run BEFORE body parsing so a throttled request never costs us the upload/JSON parse.
 // Only /api/leads legitimately carries big payloads (the house photo + rendered design as data URLs);

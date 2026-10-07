@@ -1,0 +1,85 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="robots" content="noindex, nofollow" />
+  <meta name="theme-color" content="#0d1f3a" />
+  <title>Blue Duck Design Studio</title>
+  <link rel="icon" href="/blue-duck-logo.png" />
+  <link rel="stylesheet" href="/style.css" />
+  <link rel="stylesheet" href="/team/assets/team.css" />
+</head>
+<body class="team-body">
+  <header>
+    <img class="logo" src="/blue-duck-logo.png" alt="Blue Duck Christmas Lights" />
+    <h1>Design Studio <span class="internal-badge">Internal</span></h1>
+    <p>Create a customer's lighting concept and send them a presentation. Not part of the public customer journey — nothing here counts toward customer analytics.</p>
+    <div class="team-bar">
+      <span id="usageChip" class="usage-chip"></span>
+      <button type="button" id="signOutBtn" class="link-btn">Sign out</button>
+    </div>
+  </header>
+
+  <main>
+    <section class="controls team-card" id="stepPhoto">
+      <h2><span class="num">1</span> Customer &amp; photo</h2>
+      <div class="team-fields">
+        <div class="field">
+          <label for="repName">Your name <small>(so we know who made it)</small></label>
+          <input type="text" id="repName" maxlength="40" autocomplete="name" placeholder="e.g. Jamie R." />
+        </div>
+        <div class="field">
+          <label for="customerName">Customer name <small>(optional)</small></label>
+          <input type="text" id="customerName" maxlength="80" autocomplete="off" />
+        </div>
+        <div class="field wide">
+          <label for="customerAddress">Property address <small>(optional)</small></label>
+          <input type="text" id="customerAddress" maxlength="140" autocomplete="off" />
+        </div>
+      </div>
+
+      <label class="upload-box" id="uploadBox">
+        <input type="file" id="fileInput" accept="image/*" hidden />
+        <span id="uploadLabel">📸 Click to upload a photo of the home</span>
+      </label>
+      <button id="generateBtn" disabled>✨ Generate Designs</button>
+      <p id="statusMsg" class="status"></p>
+    </section>
+
+    <section class="team-card" id="stepPick" hidden>
+      <h2><span class="num">2</span> Pick a design</h2>
+      <p class="gate-copy">Tap a design to enlarge it. Choose the one the customer likes best.</p>
+      <div class="style-grid" id="styleGrid"></div>
+    </section>
+
+    <section class="team-card" id="stepPresent" hidden>
+      <h2><span class="num">3</span> Build the presentation</h2>
+      <img id="chosenImg" class="chosen-img" alt="Chosen design" />
+      <p class="chosen-label">Selected design: <strong id="chosenLabel"></strong></p>
+
+      <fieldset class="team-packages">
+        <legend>Package <small>(optional)</small></legend>
+        <div id="packageOptions"></div>
+      </fieldset>
+
+      <label class="team-check"><input type="checkbox" id="includeOffer" checked /> Include the current offer (50% off Year 1 with a signed 3-year agreement)</label>
+
+      <div class="field">
+        <label for="notes">Notes for the customer <small>(optional, shown on the PDF)</small></label>
+        <textarea id="notes" rows="3" maxlength="500"></textarea>
+      </div>
+
+      <button type="button" id="pdfBtn">📄 Create Presentation PDF</button>
+      <p id="pdfMsg" class="status"></p>
+    </section>
+
+    <p class="disclaimer">AI-generated previews are for visualization only. Actual installation may vary.</p>
+  </main>
+
+  <div class="team-lightbox" id="lightbox" hidden><img id="lightboxImg" alt="" /></div>
+
+  <script src="/packages.js"></script>
+  <script src="/team/assets/team.js"></script>
+</body>
+</html>
