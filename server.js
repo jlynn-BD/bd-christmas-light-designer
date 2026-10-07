@@ -18,6 +18,7 @@ const sharpPromise = import("sharp")
 import { generateLeadPdf } from "./lead-pdf.js";
 import { sendLeadEmail, sendCustomerConfirmationEmail } from "./lead-email.js";
 import { syncLeadToCrm } from "./lead-crm.js";
+import { initAnalytics, ingestEvents, reportHandler, adminAuth } from "./analytics.js";
 import { apiGuard, generationGuard, leadsGuard, getClientIp, isAllowlisted, initAbuseGuard } from "./abuse-guard.js";
 
 const app = express();
@@ -63,6 +64,7 @@ async function ensureLeadsTable() {
 }
 ensureLeadsTable().catch((err) => console.error("Failed to ensure leads table exists:", err));
 initAbuseGuard(pool);
+initAnalytics(pool);
 
 const APPROVED_ZIPS = new Set([
   "46032", "46033", "46034", "46037", "46038", "46040", "46055", "46060", "46062",
@@ -283,6 +285,15 @@ app.get("/api/client-info", (req, res) => {
     trueClientIp: req.headers["true-client-ip"] ?? null,
   });
 });
+
+// Anonymous funnel events from the browser (see analytics.js). No personal data.
+app.post("/api/events", ingestEvents);
+
+// Staff-only analytics dashboard, behind the ADMIN_PASSWORD env var.
+app.get("/admin", adminAuth, (req, res) => {
+  res.sendFile(path.join(process.cwd(), "admin", "dashboard.html"));
+});
+app.get("/admin/api/report", adminAuth, reportHandler);
 
 app.get("/api/styles", (req, res) => {
   res.json({ styles: STYLES.map(({ key, label }) => ({ key, label })) });

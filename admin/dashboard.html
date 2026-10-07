@@ -1,0 +1,256 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="robots" content="noindex, nofollow" />
+  <title>Blue Duck — Customer Journey</title>
+  <style>
+    :root {
+      --bg: #0d1f3a;
+      --panel: #16305c;
+      --panel-2: #1c3a6e;
+      --line: #2a4a82;
+      --text: #f2f6ff;
+      --muted: #9fb3d6;
+      --accent: #f5c842;
+      --good: #4cc38a;
+      --bad: #ff6b6b;
+      --bar: #4a8df0;
+    }
+    * { box-sizing: border-box; }
+    body { margin: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif; background: var(--bg); color: var(--text); line-height: 1.45; }
+    .wrap { max-width: 1040px; margin: 0 auto; padding: 20px 16px 60px; }
+    h1 { font-size: 1.5rem; margin: 0 0 4px; }
+    h2 { font-size: 1.1rem; margin: 0 0 4px; }
+    .sub { color: var(--muted); font-size: 0.9rem; margin: 0 0 14px; }
+    .card { background: var(--panel); border: 1px solid var(--line); border-radius: 12px; padding: 16px; margin-bottom: 16px; }
+    .filters { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; margin-bottom: 16px; }
+    select, button { font: inherit; padding: 8px 12px; border-radius: 8px; border: 1px solid var(--line); background: var(--panel-2); color: var(--text); min-height: 40px; }
+    label.chk { display: flex; align-items: center; gap: 6px; color: var(--muted); font-size: 0.9rem; }
+    .tiles { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 12px; margin-bottom: 16px; }
+    .tile { background: var(--panel); border: 1px solid var(--line); border-radius: 12px; padding: 14px; }
+    .tile .n { font-size: 1.8rem; font-weight: 700; }
+    .tile .l { color: var(--muted); font-size: 0.8rem; }
+    .insights { border-left: 4px solid var(--accent); }
+    .insights li { margin: 6px 0; }
+    ul { margin: 6px 0 0; padding-left: 20px; }
+
+    .funnel-row { margin: 4px 0 2px; }
+    .funnel-head { display: flex; justify-content: space-between; gap: 10px; flex-wrap: wrap; font-size: 0.92rem; }
+    .funnel-head .lbl small { color: var(--accent); margin-left: 8px; font-size: 0.75rem; }
+    .funnel-head .num { color: var(--muted); white-space: nowrap; }
+    .bar-track { background: rgba(255,255,255,0.08); border-radius: 6px; height: 22px; margin-top: 4px; overflow: hidden; }
+    .bar-fill { height: 100%; background: var(--bar); border-radius: 6px; min-width: 2px; }
+    .bar-fill.done { background: var(--good); }
+    .drop { color: var(--muted); font-size: 0.8rem; margin: 6px 0 4px; padding-left: 4px; }
+    .drop b { color: var(--bad); }
+    .drop.worst b { background: var(--bad); color: #fff; padding: 1px 6px; border-radius: 4px; }
+    .sub-row .funnel-head { padding-left: 14px; }
+
+    table { width: 100%; border-collapse: collapse; font-size: 0.88rem; }
+    th, td { text-align: left; padding: 8px 6px; border-bottom: 1px solid var(--line); vertical-align: top; }
+    th { color: var(--muted); font-weight: 600; font-size: 0.78rem; }
+    td.num, th.num { text-align: right; white-space: nowrap; }
+    .scroll { overflow-x: auto; }
+    .pill { display: inline-block; background: var(--panel-2); border-radius: 999px; padding: 2px 8px; margin: 2px 4px 2px 0; font-size: 0.78rem; }
+    .grid2 { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 16px; }
+    .mini li { display: flex; justify-content: space-between; list-style: none; padding: 4px 0; border-bottom: 1px dashed var(--line); }
+    .mini { padding-left: 0; }
+    .daily { display: flex; align-items: flex-end; gap: 3px; height: 110px; margin-top: 10px; }
+    .daily .col { flex: 1; display: flex; flex-direction: column; justify-content: flex-end; align-items: center; min-width: 6px; height: 100%; }
+    .daily .col .b { width: 100%; background: var(--bar); border-radius: 3px 3px 0 0; position: relative; }
+    .daily .col .c { width: 100%; background: var(--good); }
+    .legend { color: var(--muted); font-size: 0.78rem; margin-top: 6px; }
+    .empty { color: var(--muted); padding: 24px 0; text-align: center; }
+    .note { color: var(--muted); font-size: 0.8rem; }
+    @media (max-width: 600px) { h1 { font-size: 1.25rem; } .tile .n { font-size: 1.5rem; } }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <h1>Customer Journey Dashboard</h1>
+    <p class="sub">Where visitors go through the Blue Duck design app — and where they leave. <span id="updated"></span></p>
+
+    <div class="filters">
+      <select id="range" aria-label="Time range">
+        <option value="24h">Last 24 hours</option>
+        <option value="7d">Last 7 days</option>
+        <option value="30d" selected>Last 30 days</option>
+        <option value="90d">Last 90 days</option>
+        <option value="all">All time</option>
+      </select>
+      <select id="device" aria-label="Device">
+        <option value="all">All devices</option>
+        <option value="phone">Phones only</option>
+        <option value="tablet">Tablets only</option>
+        <option value="desktop">Desktops only</option>
+      </select>
+      <label class="chk"><input type="checkbox" id="internal" /> Include staff testing</label>
+      <button id="refresh" type="button">Refresh</button>
+    </div>
+
+    <div id="content"><p class="empty">Loading…</p></div>
+  </div>
+
+<script>
+const $ = (id) => document.getElementById(id);
+const fmt = (n) => Number(n ?? 0).toLocaleString();
+function el(tag, props = {}, ...kids) {
+  const e = document.createElement(tag);
+  for (const [k, v] of Object.entries(props)) {
+    if (k === "class") e.className = v;
+    else if (k === "style") e.style.cssText = v;
+    else e[k] = v;
+  }
+  for (const kid of kids) e.append(kid instanceof Node ? kid : document.createTextNode(kid ?? ""));
+  return e;
+}
+const dur = (s) => (s == null ? "—" : s < 90 ? `${Math.round(s)}s` : s < 5400 ? `${Math.round(s / 60)} min` : `${(s / 3600).toFixed(1)} hr`);
+
+function tile(n, l) { return el("div", { class: "tile" }, el("div", { class: "n" }, n), el("div", { class: "l" }, l)); }
+
+function listCard(title, items, emptyText = "Nothing yet") {
+  const ul = el("ul", { class: "mini" });
+  if (!items.length) ul.append(el("li", {}, emptyText));
+  for (const it of items) ul.append(el("li", {}, el("span", {}, it.name), el("b", {}, fmt(it.count))));
+  return el("div", { class: "card" }, el("h2", {}, title), ul);
+}
+
+function render(r) {
+  const root = $("content");
+  root.replaceChildren();
+  $("updated").textContent = `Updated ${new Date(r.generatedAt).toLocaleTimeString()}.`;
+
+  if (!r.totals.visits) {
+    root.append(el("div", { class: "card empty" }, "No visits recorded for this view yet. Visits appear here a few seconds after someone opens the app."));
+    return;
+  }
+
+  const t = r.totals;
+  root.append(el("div", { class: "tiles" },
+    tile(fmt(t.visits), "Visits"),
+    tile(fmt(t.converted), "Submitted a request"),
+    tile(`${t.conversionPct}%`, "Overall conversion"),
+    tile(fmt(t.residentialLeads), "Residential leads"),
+    tile(fmt(t.commercialLeads), "Commercial requests"),
+    tile(dur(t.medianSecondsToSubmit), "Typical time to submit"),
+  ));
+
+  if (r.insights.length) {
+    const ul = el("ul");
+    r.insights.forEach((i) => ul.append(el("li", {}, i)));
+    root.append(el("div", { class: "card insights" }, el("h2", {}, "What stands out"), ul));
+  }
+
+  // ----- funnel
+  const funnel = el("div", { class: "card" }, el("h2", {}, "The funnel"),
+    el("p", { class: "sub" }, "How many visits reached each stage. “Didn't continue” includes people still mid-visit."));
+  const maxDrop = Math.max(0, ...r.funnel.filter((x) => x.dropCount != null && x.key !== "res").map((x) => x.dropCount));
+  r.funnel.forEach((row, i) => {
+    const isLast = row.key === "submitted";
+    // The drop-off sits BETWEEN the previous bar and this one: "of those above, this many never got here".
+    if (row.dropCount != null && row.key !== "res" && i > 0) {
+      const worst = row.dropCount === maxDrop && maxDrop > 0;
+      funnel.append(el("div", { class: "drop" + (worst ? " worst" : "") }, "↓ ",
+        el("b", {}, `${row.dropPct}% didn't make it to the next stage`), ` (${fmt(row.dropCount)} of ${fmt(row.prevCount)})`));
+    }
+    const wrap = el("div", { class: "funnel-row" + (row.key === "res" ? " sub-row" : "") });
+    const lbl = el("span", { class: "lbl" }, row.label);
+    if (row.wizard) lbl.append(el("small", {}, row.wizard));
+    wrap.append(el("div", { class: "funnel-head" }, lbl,
+      el("span", { class: "num" }, `${fmt(row.count)} · ${row.pctOfStart}% of visits`)));
+    wrap.append(el("div", { class: "bar-track" }, el("div", { class: "bar-fill" + (isLast ? " done" : ""), style: `width:${Math.max(row.pctOfStart, 0.5)}%` })));
+    funnel.append(wrap);
+  });
+  const c = r.commercial;
+  funnel.append(el("p", { class: "note" }, `Commercial branch: ${fmt(c.chose)} chose Commercial → ${fmt(c.openedForm)} opened the form → ${fmt(c.submitted)} requested a consultation (${c.convPct}%). Commercial visitors aren't counted as drop-offs above.`));
+  root.append(funnel);
+
+  // ----- where people leave
+  const ab = el("div", { class: "card" }, el("h2", {}, "Where people leave"),
+    el("p", { class: "sub" }, `${fmt(t.abandoned)} visits ended without a submission (idle 30+ minutes). Another ${fmt(t.inProgress)} are still in progress and not counted. “Share” is the percent of all people who left.`));
+  if (!r.abandonment.length) ab.append(el("p", { class: "empty" }, "No abandoned visits yet."));
+  else {
+    const maxStep = Math.max(...r.byWizardStep.map((w) => w.count));
+    ab.append(el("h2", { style: "font-size:0.95rem;margin-top:8px" }, "By wizard step"));
+    r.byWizardStep.forEach((w) => {
+      ab.append(el("div", { class: "funnel-row" },
+        el("div", { class: "funnel-head" }, el("span", { class: "lbl" }, w.step), el("span", { class: "num" }, `${fmt(w.count)} people · ${w.shareOfAbandoned}%`)),
+        el("div", { class: "bar-track" }, el("div", { class: "bar-fill", style: `width:${Math.max(w.shareOfAbandoned, 0.5)}%;background:${w.count === maxStep ? "var(--bad)" : "var(--bar)"}` }))));
+    });
+    ab.append(el("h2", { style: "font-size:0.95rem;margin-top:18px" }, "Screen by screen"));
+    const tbl = el("table");
+    tbl.append(el("thead", {}, el("tr", {}, el("th", {}, "Where they left"), el("th", { class: "num" }, "People"), el("th", { class: "num" }, "Share"), el("th", { class: "num" }, "On phone"), el("th", { class: "num" }, "Hit an error"), el("th", { class: "num" }, "Time spent"), el("th", {}, "Errors they saw"))));
+    const body = el("tbody");
+    const max = Math.max(...r.abandonment.map((a) => a.count));
+    r.abandonment.forEach((a) => {
+      const labelCell = el("td", {}, a.label);
+      if (a.wizard) labelCell.append(el("div", { class: "note" }, a.wizard));
+      const tr = el("tr", {}, labelCell, el("td", { class: "num" }, fmt(a.count)),
+        el("td", { class: "num" }, a.count === max ? el("b", { style: "color:var(--bad)" }, `${a.shareOfAbandoned}%`) : `${a.shareOfAbandoned}%`),
+        el("td", { class: "num" }, `${a.phonePct}%`), el("td", { class: "num" }, `${a.sawErrorPct}%`), el("td", { class: "num" }, dur(a.medianSecondsActive)));
+      const errs = el("td");
+      a.errors.forEach((e) => errs.append(el("span", { class: "pill" }, `${e.name} ×${e.count}`)));
+      tr.append(errs);
+      body.append(tr);
+    });
+    tbl.append(body);
+    ab.append(el("div", { class: "scroll" }, tbl));
+    ab.append(el("p", { class: "note" }, "“Time spent” is the median time between reaching that screen and their last activity. A very short time suggests they bounced immediately; a long one suggests they were stuck or hesitating."));
+  }
+  root.append(ab);
+
+  // ----- details
+  const g = r.generation;
+  const genCard = el("div", { class: "card" }, el("h2", {}, "AI design generation"),
+    el("ul", { class: "mini" },
+      el("li", {}, el("span", {}, "Started"), el("b", {}, fmt(g.started))),
+      el("li", {}, el("span", {}, "Produced designs"), el("b", {}, fmt(g.completed))),
+      el("li", {}, el("span", {}, "Failed / blocked"), el("b", {}, fmt(g.failed))),
+      el("li", {}, el("span", {}, "Typical wait"), el("b", {}, g.medianSeconds ? `${g.medianSeconds}s` : "—"))));
+  g.failureReasons.forEach((f) => genCard.append(el("span", { class: "pill" }, `${f.name} ×${f.count}`)));
+
+  const ch = r.choices;
+  const extra = el("div", { class: "card" }, el("h2", {}, "Choices"),
+    el("ul", { class: "mini" },
+      el("li", {}, el("span", {}, "Chose to customize their design"), el("b", {}, `${ch.customizedPct}%`)),
+      el("li", {}, el("span", {}, "…and finished customizing"), el("b", {}, `${ch.customizeFinishedPct}%`))));
+
+  root.append(el("div", { class: "grid2" }, genCard, extra,
+    listCard("Designs chosen", ch.styles), listCard("Packages chosen", ch.packages),
+    listCard("How leads want to proceed", ch.contactPreferences), listCard("Devices", r.audience.devices),
+    listCard("Where visitors came from", r.audience.referrers),
+    listCard("ZIP codes outside the service area", r.outOfAreaZips, "None — everyone was in area")));
+
+  // ----- daily trend
+  if (r.daily.length > 1) {
+    const maxV = Math.max(...r.daily.map((d) => d.started), 1);
+    const chart = el("div", { class: "daily" });
+    r.daily.forEach((d) => {
+      const b = el("div", { class: "b", style: `height:${(d.started / maxV) * 100}%`, title: `${d.date}: ${d.started} visits, ${d.converted} submitted` });
+      if (d.converted) b.append(el("div", { class: "c", style: `position:absolute;bottom:0;left:0;height:${(d.converted / d.started) * 100}%` }));
+      chart.append(el("div", { class: "col" }, b));
+    });
+    root.append(el("div", { class: "card" }, el("h2", {}, "Visits per day"), chart,
+      el("p", { class: "legend" }, `Blue = visits, green = submitted a request. ${r.daily[0].date} → ${r.daily[r.daily.length - 1].date}`)));
+  }
+}
+
+async function load() {
+  $("content").replaceChildren(el("p", { class: "empty" }, "Loading…"));
+  const qs = new URLSearchParams({ range: $("range").value, device: $("device").value, internal: $("internal").checked ? "1" : "0" });
+  try {
+    const res = await fetch(`/admin/api/report?${qs}`, { credentials: "same-origin" });
+    if (!res.ok) throw new Error(String(res.status));
+    render(await res.json());
+  } catch (e) {
+    $("content").replaceChildren(el("div", { class: "card empty" }, "Couldn't load the report. Try refreshing."));
+  }
+}
+["range", "device", "internal"].forEach((id) => $(id).addEventListener("change", load));
+$("refresh").addEventListener("click", load);
+load();
+</script>
+</body>
+</html>

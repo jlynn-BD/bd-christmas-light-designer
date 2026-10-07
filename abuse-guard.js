@@ -324,9 +324,22 @@ export function leadsGuard(req, res, next) {
   next();
 }
 
+// Analytics beacons fire in small batches throughout a visit, and many visitors can share one IP
+// (offices, mobile carriers), so they get a roomier limit of their own.
+const eventsLimiter = makeWindowLimiter({
+  limit: 600,
+  windowMs: 60 * 1000,
+  message: () => "Too many requests.",
+});
+
 /** Blanket per-IP request ceiling for every /api route (cheap protection for ZIP checks etc.). */
 export function apiGuard(req, res, next) {
   const ip = getClientIp(req);
+  if (req.path === "/events") {
+    const burst = eventsLimiter(ip);
+    if (burst) return res.status(429).end();
+    return next();
+  }
   const hit = apiLimiter(ip);
   if (hit) {
     logBlock(ip, "api-burst");

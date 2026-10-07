@@ -8,6 +8,16 @@ const statusMsg = document.getElementById("statusMsg");
 const styleGrid = document.getElementById("styleGrid");
 const appContent = document.getElementById("appContent");
 
+// Anonymous funnel tracking (analytics-client.js). Safe no-ops if the tracker didn't load.
+const track = (event, props) => {
+  if (window.bdTrack) window.bdTrack(event, props);
+};
+let currentStepKey = null;
+function setStage(stage) {
+  window.bdStage = stage;
+}
+setStage("zip");
+
 const STEP_ORDER = ["design", "confirm", "lighting", "package", "quote"];
 const progressBar = document.getElementById("progressBar");
 const progressLabel = document.getElementById("progressLabel");
@@ -16,6 +26,8 @@ const progressSteps = document.getElementById("progressSteps");
 function setProgressStep(stepKey) {
   const idx = STEP_ORDER.indexOf(stepKey);
   if (idx === -1) return;
+  currentStepKey = stepKey;
+  setStage(stepKey);
 
   progressLabel.textContent = `Step ${idx + 1} of ${STEP_ORDER.length}`;
 
@@ -76,6 +88,7 @@ function showDesign() {
   controlsPanel.hidden = false;
   styleGrid.hidden = false;
   setProgressStep("design");
+  track("step_reached", { step: "design" });
   scrollToTop();
 }
 
@@ -85,6 +98,7 @@ function showConfirm() {
   approvalImg.src = chosenStyle.image;
   approvalPanel.hidden = false;
   setProgressStep("confirm");
+  track("step_reached", { step: "confirm" });
   scrollToTop();
 }
 
@@ -94,6 +108,7 @@ function showLighting() {
   decorBaseImg.src = chosenStyle.baseImage;
   customizePanel.hidden = false;
   setProgressStep("lighting");
+  track("step_reached", { step: "lighting" });
   scrollToTop();
 }
 
@@ -101,6 +116,8 @@ function showPackage() {
   hideAllStepPanels();
   packagePanel.hidden = false;
   setProgressStep("package");
+  track("step_reached", { step: "package" });
+  track("package_viewed");
   scrollToTop();
 }
 
@@ -108,6 +125,8 @@ function showQuote() {
   hideAllStepPanels();
   leadPanel.hidden = false;
   setProgressStep("quote");
+  track("step_reached", { step: "quote" });
+  track("lead_form_viewed");
   scrollToTop();
 }
 
@@ -129,10 +148,12 @@ function showThankYou(contactPreference) {
     : "";
 
   thankYouPanel.hidden = false;
+  setStage("thank_you");
   scrollToTop();
 }
 
 function goToStep(stepKey) {
+  track("went_back", { from: currentStepKey || "unknown", to: stepKey });
   if (stepKey === "design") {
     document.querySelectorAll(".style-card.selected").forEach((el) => el.classList.remove("selected"));
     chosenStyle = null;
@@ -476,8 +497,11 @@ async function checkZip() {
       verifiedZip = zip;
       gatePanel.hidden = true;
       propertyTypePanel.hidden = false;
+      setStage("property_type");
+      track("zip_in_area", { zip });
       scrollToTop();
     } else {
+      track("zip_out_of_area", { zip });
       setGateMsg(
         `Sorry, we don't currently service ZIP code ${zip}. Blue Duck Christmas Lights serves the greater ` +
           "Indianapolis area — feel free to try another ZIP or check back as we grow!",
@@ -485,6 +509,7 @@ async function checkZip() {
       );
     }
   } catch {
+    track("zip_check_failed");
     setGateMsg("Something went wrong checking your ZIP code. Please try again.", true);
   } finally {
     zipSubmitBtn.disabled = false;
@@ -503,7 +528,9 @@ residentialBtn.addEventListener("click", () => {
   document.body.classList.add("in-wizard");
   progressBar.hidden = false;
   thankYouPanel.hidden = true;
+  track("property_chosen", { type: "residential" });
   setProgressStep("design");
+  track("step_reached", { step: "design" });
   scrollToTop();
 });
 
@@ -511,6 +538,9 @@ commercialBtn.addEventListener("click", () => {
   propertyTypePanel.hidden = true;
   commercialPanel.hidden = false;
   headerPromo.hidden = true;
+  setStage("commercial_form");
+  track("property_chosen", { type: "commercial" });
+  track("commercial_form_viewed");
   scrollToTop();
 });
 
@@ -536,15 +566,21 @@ commercialForm.addEventListener("submit", async (e) => {
     });
 
     const data = await readJson(res);
-    if (!res.ok) throw new Error(data.error || "Failed to submit your request.");
+    if (!res.ok) {
+      const failure = new Error(data.error || "Failed to submit your request.");
+      failure.status = res.status;
+      throw failure;
+    }
 
     commercialForm.hidden = true;
+    track("commercial_submitted");
     setCommMsg(
       "🎉 Thank you! Your information has been submitted. A member of the Blue Duck Christmas Lights team " +
         "will contact you shortly to schedule your consultation."
     );
     scrollToTop();
   } catch (err) {
+    track("submit_failed", { type: "commercial", reason: failureReason(err) });
     setCommMsg(err.message, true);
   } finally {
     commSubmitBtn.disabled = false;
@@ -621,6 +657,7 @@ function selectStyle(style, card) {
 
   const img = card.querySelector("img");
   chosenStyle = { key: style.key, label: style.label, image: img.src, baseImage: img.src, customized: false };
+  track("design_chosen", { style: style.key });
 
   decorations = [];
   decorCanvasWrap.querySelectorAll(".decor-item").forEach((el) => el.remove());
@@ -630,11 +667,13 @@ function selectStyle(style, card) {
 
 thumbsUpBtn.addEventListener("click", () => {
   if (!chosenStyle) return;
+  track("design_loved");
   openPackagePanel();
 });
 
 thumbsDownBtn.addEventListener("click", () => {
   if (!chosenStyle) return;
+  track("customize_started");
   openCustomizePanel();
 });
 
@@ -698,6 +737,7 @@ function selectPackage(pkg, card) {
   document.querySelectorAll(".package-card.selected").forEach((el) => el.classList.remove("selected"));
   card.classList.add("selected");
   chosenPackage = pkg;
+  track("package_selected", { package: pkg.key });
   packageContinueBtn.disabled = false;
   packageContinueTopBtn.hidden = false;
   packageContinueTopBtn.textContent = `Continue with ${pkg.name} →`;
@@ -870,6 +910,7 @@ customizeDoneBtn.addEventListener("click", async () => {
     const flattened = await flattenDesign();
     chosenStyle.image = flattened;
     chosenStyle.customized = true;
+    track("customize_done", { count: decorations.length });
     openPackagePanel();
   } catch {
     alert("Something went wrong applying your decorations. Please try again.");
@@ -946,10 +987,21 @@ leadForm.addEventListener("submit", async (e) => {
     });
 
     const data = await readJson(res);
-    if (!res.ok) throw new Error(data.error || "Failed to submit your request.");
+    if (!res.ok) {
+      const failure = new Error(data.error || "Failed to submit your request.");
+      failure.status = res.status;
+      throw failure;
+    }
 
+    track("lead_submitted", {
+      contactPreference: contactPreference || "none",
+      style: chosenStyle.key,
+      package: chosenPackage ? chosenPackage.key : "none",
+      customized: chosenStyle.customized,
+    });
     showThankYou(contactPreference);
   } catch (err) {
+    track("submit_failed", { type: "residential", reason: failureReason(err) });
     setLeadMsg(err.message, true);
   } finally {
     leadSubmitBtn.disabled = false;
@@ -1000,6 +1052,7 @@ fileInput.addEventListener("change", async () => {
   const file = await downscaleImage(original);
 
   selectedFile = file;
+  track("photo_selected", { kb: Math.round(file.size / 1024) });
   uploadLabel.textContent = original.name;
   generateBtn.disabled = false;
 
@@ -1030,6 +1083,8 @@ generateBtn.addEventListener("click", async () => {
   if (!selectedFile) return;
 
   generateBtn.disabled = true;
+  const genStartedAt = Date.now();
+  track("generate_started");
   setStatus(`🎄 Hanging your lights in ${styles.length} styles... this can take a minute or two.`);
   renderCards("loading");
   startLoadingQuoteRotation();
@@ -1048,7 +1103,10 @@ generateBtn.addEventListener("click", async () => {
     const data = await readJson(response);
 
     if (!response.ok) {
-      throw new Error(data.error || "Failed to generate previews.");
+      const failure = new Error(data.error || "Failed to generate previews.");
+      failure.status = response.status;
+      failure.code = data.code;
+      throw failure;
     }
 
     for (const result of data.results) {
@@ -1056,6 +1114,11 @@ generateBtn.addEventListener("click", async () => {
     }
 
     const failures = data.results.filter((r) => r.error).length;
+    if (failures < data.results.length) {
+      track("generate_completed", { ok: data.results.length - failures, failed: failures, ms: Date.now() - genStartedAt });
+    } else {
+      track("generate_failed", { reason: "all_failed" });
+    }
     let doneMsg =
       failures === 0
         ? "🎉 Your home is ready for the holidays!"
@@ -1067,6 +1130,7 @@ generateBtn.addEventListener("click", async () => {
     setStatus(doneMsg);
     if (isPhone() && failures < data.results.length) scrollToElement(statusMsg, 16);
   } catch (err) {
+    track("generate_failed", { reason: failureReason(err) });
     setStatus(
       err instanceof TypeError
         ? "We lost your connection while creating your designs — please check your signal and try again."
@@ -1082,6 +1146,16 @@ generateBtn.addEventListener("click", async () => {
 
 // Throttled/overloaded responses can come back from the host as plain text rather than our JSON —
 // never let that surface as a cryptic "Unexpected token" error.
+// Short, non-identifying label for why a request failed (used only for analytics).
+function failureReason(err) {
+  if (err instanceof TypeError) return "network";
+  if (err && err.code) return err.code;
+  if (err && err.status === 429) return "rate_limited";
+  if (err && err.status === 503) return "busy";
+  if (err && err.status === 400) return "invalid";
+  return "error";
+}
+
 async function readJson(response) {
   try {
     return await response.json();
@@ -1102,6 +1176,7 @@ function setStatus(message, isError = false) {
 
 loadStyles();
 setProgressStep("design");
+track("app_started");
 
 setupAddressAutocomplete(leadAddress, document.getElementById("leadAddressSuggestions"));
 setupAddressAutocomplete(commAddress, document.getElementById("commAddressSuggestions"));
