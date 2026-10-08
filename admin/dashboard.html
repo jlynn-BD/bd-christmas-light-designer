@@ -64,11 +64,14 @@
     .legend { color: var(--muted); font-size: 0.78rem; margin-top: 6px; }
     .empty { color: var(--muted); padding: 24px 0; text-align: center; }
     .note { color: var(--muted); font-size: 0.8rem; }
+    .tabs { display: flex; gap: 6px; margin-bottom: 14px; }
+    .tab { background: transparent; border: 1px solid var(--line); color: var(--muted); }
+    .tab.active { background: var(--accent); border-color: var(--accent); color: #16305c; font-weight: 700; }
     .print-title { display: none; }
     @media print {
       :root { --bg: #fff; --panel: #fff; --panel-2: #f1f4fa; --line: #cfd6e4; --text: #14233f; --muted: #55657f; --bar: #3b78d8; }
       body { background: #fff; }
-      .filters { display: none; }
+      .filters, .tabs { display: none; }
       .card, .tile { break-inside: avoid; }
       .print-title { display: block; color: var(--muted); font-size: 0.85rem; margin-bottom: 10px; }
       .bar-track { border: 1px solid var(--line); }
@@ -80,6 +83,11 @@
   <div class="wrap">
     <h1>Customer Journey Dashboard</h1>
     <p class="sub">Where visitors go through the Blue Duck design app — and where they leave. <span id="updated"></span></p>
+
+    <div class="tabs" role="tablist">
+      <button type="button" id="tabCustomers" class="tab active" role="tab">Customer journey</button>
+      <button type="button" id="tabTeam" class="tab" role="tab">Sales team</button>
+    </div>
 
     <div class="filters">
       <select id="range" aria-label="Time range">
@@ -105,6 +113,7 @@
     <div id="content"><p class="empty">Loading…</p></div>
   </div>
 
+<script src="/packages.js"></script>
 <script>
 const $ = (id) => document.getElementById(id);
 const fmt = (n) => Number(n ?? 0).toLocaleString();
@@ -299,20 +308,113 @@ function render(r) {
   }
 }
 
+let view = "customers";
+const STYLE_NAMES = { warm_white: "Warm White", multicolor: "Multicolored", red_white: "Red and White", red_green_white: "Red, Green and White" };
+const prettyStyle = (k) => STYLE_NAMES[k] ?? k;
+const prettyPackage = (k) => (k === "none" ? "No package" : (PACKAGES.find((p) => p.key === k)?.name ?? k));
+
+function setView(v) {
+  view = v;
+  $("tabCustomers").classList.toggle("active", v === "customers");
+  $("tabTeam").classList.toggle("active", v === "team");
+  $("device").hidden = v === "team";
+  $("internal").closest("label").hidden = v === "team";
+  document.querySelector("h1").textContent = v === "team" ? "Sales Team Activity" : "Customer Journey Dashboard";
+  document.querySelector(".sub").firstChild.textContent = v === "team"
+    ? "What the Blue Duck sales team is creating in the internal Design Studio. Kept separate from customer analytics. "
+    : "Where visitors go through the Blue Duck design app — and where they leave. ";
+  load();
+}
+
+const mins = (m) => (m == null ? "—" : m < 1 ? "<1 min" : `${m} min`);
+
+function renderTeam(r) {
+  lastReport = r;
+  const none = !r.totals.concepts;
+  $("csv").disabled = none;
+  $("print").disabled = none;
+  $("printTitle").textContent = `Blue Duck sales team activity — ${$("range").selectedOptions[0].text} — generated ${new Date(r.generatedAt).toLocaleString()}`;
+  $("updated").textContent = `Updated ${new Date(r.generatedAt).toLocaleTimeString()}.`;
+  const root = $("content");
+  root.replaceChildren();
+  if (none) {
+    root.append(el("div", { class: "card empty" }, "No Design Studio activity in this period yet. It appears here as reps generate designs and create presentations."));
+    return;
+  }
+  const t = r.totals;
+  root.append(el("div", { class: "tiles" },
+    tile(fmt(t.concepts), "Concepts started"),
+    tile(fmt(t.delivered), "Presentations finished"),
+    tile(mins(t.medianMinutesToFinish), "Typical time, photo → finished"),
+    tile(fmt(t.emails), "Emailed to customers"),
+    tile(fmt(t.crmAdds), "Saved to CRM"),
+    tile(`${t.offerPct}%`, "Included the 50% offer"),
+  ));
+
+  const tbl = el("table");
+  tbl.append(el("thead", {}, el("tr", {}, el("th", {}, "Rep"), el("th", { class: "num" }, "Concepts"), el("th", { class: "num" }, "Designs generated"), el("th", { class: "num" }, "PDFs"), el("th", { class: "num" }, "Emailed"), el("th", { class: "num" }, "CRM saves"), el("th", { class: "num" }, "Typical time"))));
+  const body = el("tbody");
+  r.reps.forEach((x) => body.append(el("tr", {}, el("td", {}, x.name), el("td", { class: "num" }, fmt(x.concepts)), el("td", { class: "num" }, fmt(x.generations)), el("td", { class: "num" }, fmt(x.pdfs)), el("td", { class: "num" }, fmt(x.emails)), el("td", { class: "num" }, fmt(x.crm)), el("td", { class: "num" }, mins(x.medianMinutes)))));
+  tbl.append(body);
+  root.append(el("div", { class: "card" }, el("h2", {}, "By rep"),
+    el("p", { class: "sub" }, "Everyone shares one team password, so reps are told apart by the name they type in. “Typical time” is the median from the first design generated to the finished PDF or email."),
+    el("div", { class: "scroll" }, tbl)));
+
+  root.append(el("div", { class: "grid2" },
+    listCard("Designs presented", r.styles.map((x) => ({ name: prettyStyle(x.name), count: x.count }))),
+    listCard("Packages presented", r.packages.map((x) => ({ name: prettyPackage(x.name), count: x.count })))));
+
+  if (r.daily.length > 1) {
+    const maxV = Math.max(...r.daily.map((d) => d.concepts), 1);
+    const chart = el("div", { class: "daily" });
+    r.daily.forEach((d) => chart.append(el("div", { class: "col" }, el("div", { class: "b", style: `height:${(d.concepts / maxV) * 100}%`, title: `${d.date}: ${d.concepts} concepts, ${d.pdfs} PDFs, ${d.emails} emails` }))));
+    root.append(el("div", { class: "card" }, el("h2", {}, "Concepts per day"), chart, el("p", { class: "legend" }, `${r.daily[0].date} → ${r.daily[r.daily.length - 1].date}`)));
+  }
+}
+
+function downloadTeamCsv() {
+  const r = lastReport;
+  if (!r) return;
+  const lines = [];
+  const add = (...cells) => lines.push(cells.map(csvCell).join(","));
+  add("Blue Duck sales team activity report");
+  add("Period", $("range").selectedOptions[0].text);
+  add("Generated", new Date(r.generatedAt).toLocaleString());
+  add();
+  add("SUMMARY");
+  add("Concepts started", r.totals.concepts); add("Presentations finished", r.totals.delivered); add("Designs generated", r.totals.generations);
+  add("PDFs created", r.totals.pdfs); add("Emailed to customers", r.totals.emails); add("Saved to CRM", r.totals.crmAdds);
+  add("Offer included %", r.totals.offerPct); add("Typical minutes photo to finished", r.totals.medianMinutesToFinish ?? "");
+  add();
+  add("BY REP"); add("Rep", "Concepts", "Designs generated", "PDFs", "Emailed", "CRM saves", "Typical minutes");
+  r.reps.forEach((x) => add(x.name, x.concepts, x.generations, x.pdfs, x.emails, x.crm, x.medianMinutes ?? ""));
+  add();
+  add("DESIGNS PRESENTED"); r.styles.forEach((x) => add(prettyStyle(x.name), x.count)); add();
+  add("PACKAGES PRESENTED"); r.packages.forEach((x) => add(prettyPackage(x.name), x.count)); add();
+  add("DAILY"); add("Date", "Concepts", "PDFs", "Emails"); r.daily.forEach((d) => add(d.date, d.concepts, d.pdfs, d.emails));
+  const blob = new Blob(["\ufeff" + lines.join("\r\n")], { type: "text/csv;charset=utf-8" });
+  const a = el("a", { href: URL.createObjectURL(blob), download: `blue-duck-sales-team-${new Date().toISOString().slice(0, 10)}.csv` });
+  document.body.append(a); a.click(); a.remove();
+}
+
 async function load() {
   $("content").replaceChildren(el("p", { class: "empty" }, "Loading…"));
-  const qs = new URLSearchParams({ range: $("range").value, device: $("device").value, internal: $("internal").checked ? "1" : "0" });
+  const params = { range: $("range").value };
+  if (view === "customers") Object.assign(params, { device: $("device").value, internal: $("internal").checked ? "1" : "0" });
   try {
-    const res = await fetch(`/admin/api/report?${qs}`, { credentials: "same-origin" });
+    const res = await fetch(`/admin/api/${view === "team" ? "team-report" : "report"}?${new URLSearchParams(params)}`, { credentials: "same-origin" });
     if (!res.ok) throw new Error(String(res.status));
-    render(await res.json());
+    const data = await res.json();
+    view === "team" ? renderTeam(data) : render(data);
   } catch (e) {
     $("content").replaceChildren(el("div", { class: "card empty" }, "Couldn't load the report. Try refreshing."));
   }
 }
+$("tabCustomers").addEventListener("click", () => setView("customers"));
+$("tabTeam").addEventListener("click", () => setView("team"));
 ["range", "device", "internal"].forEach((id) => $(id).addEventListener("change", load));
 $("refresh").addEventListener("click", load);
-$("csv").addEventListener("click", downloadCsv);
+$("csv").addEventListener("click", () => (view === "team" ? downloadTeamCsv() : downloadCsv()));
 $("print").addEventListener("click", () => window.print());
 load();
 </script>

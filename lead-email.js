@@ -163,3 +163,51 @@ export async function sendCustomerConfirmationEmail({ lead }) {
     return { ok: false, error: err.message };
   }
 }
+
+const CONCEPT_BCC = process.env.TEAM_EMAIL_BCC === undefined ? OFFICE_EMAIL : process.env.TEAM_EMAIL_BCC;
+
+/**
+ * Emails a customer the presentation PDF a sales rep built in the Design Studio. The office is
+ * BCC'd (set TEAM_EMAIL_BCC to another address, or "none" to disable) and replies go to the rep's
+ * own email when they gave one. Never throws.
+ */
+export async function sendConceptEmail({ to, customerName, repName, repEmail, pdfBuffer, styleLabel, packageName, offer }) {
+  if (!resend) return { ok: false, error: "RESEND_API_KEY not configured" };
+
+  const first = String(customerName ?? "").trim().split(/\s+/)[0] || "there";
+  const signer = repName ? `${escapeHtml(repName)} at Blue Duck Christmas Lights` : "The Blue Duck Christmas Lights Team";
+
+  const html = `
+    <div style="font-family: Arial, sans-serif; max-width: 540px; margin: 0 auto; color: #1a1a1a;">
+      <h2 style="color: #16305c; margin-bottom: 4px;">Your custom holiday lighting concept</h2>
+      <p style="font-size: 15px; line-height: 1.5;">Hi ${escapeHtml(first)},</p>
+      <p style="font-size: 15px; line-height: 1.5;">Thanks for your time! ${repName ? escapeHtml(repName) + " put" : "We put"} together a lighting concept for your home — it's attached as a PDF.</p>
+      <p style="color: #5a6b85; font-size: 14px; margin: 0 0 4px;">Design: <strong style="color:#1a1a1a;">${escapeHtml(styleLabel)}</strong></p>
+      ${packageName ? `<p style="color: #5a6b85; font-size: 14px; margin: 0 0 4px;">Package: <strong style="color:#1a1a1a;">${escapeHtml(packageName)}</strong></p>` : ""}
+      ${offer ? `<p style="color: #b3212c; font-size: 14px; font-weight: bold; margin: 8px 0;">${escapeHtml(offer)}</p>` : ""}
+      <p style="font-size: 15px; line-height: 1.5;">Just reply to this email with any questions or when you're ready to move forward.</p>
+      <p style="color: #5a6b85; font-size: 13px; margin-top: 24px;">— ${signer}</p>
+      <p style="color: #8a97ad; font-size: 11px; margin-top: 18px;">The preview is AI-generated for visualization only; actual installation may vary.</p>
+    </div>
+  `;
+
+  try {
+    const result = await resend.emails.send({
+      from: `Blue Duck Christmas Lights <${FROM_EMAIL}>`,
+      to,
+      ...(CONCEPT_BCC && CONCEPT_BCC.toLowerCase() !== "none" ? { bcc: CONCEPT_BCC } : {}),
+      ...(repEmail ? { replyTo: repEmail } : {}),
+      subject: "Your custom holiday lighting concept from Blue Duck",
+      html,
+      attachments: [{ filename: "Blue-Duck-Holiday-Lighting-Concept.pdf", content: pdfBuffer.toString("base64") }],
+    });
+    if (result.error) {
+      console.error("Resend API returned an error sending concept email:", result.error);
+      return { ok: false, error: result.error };
+    }
+    return { ok: true, id: result.data?.id };
+  } catch (err) {
+    console.error("Failed to send concept email:", err);
+    return { ok: false, error: err.message };
+  }
+}

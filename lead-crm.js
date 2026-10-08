@@ -114,3 +114,71 @@ export async function syncLeadToCrm(lead) {
     return { ok: false, error: err.message };
   }
 }
+
+/**
+ * Adds/updates a GoHighLevel contact for a concept a Blue Duck sales rep built in the internal
+ * Design Studio. Tagged so these are easy to tell apart from customers who used the public app.
+ * Needs a name plus an email or phone. Never throws — returns { ok: false } on failure.
+ */
+export async function syncConceptToCrm(concept) {
+  if (!GHL_API_KEY || !GHL_LOCATION_ID) {
+    console.error("GHL_API_KEY / GHL_LOCATION_ID not set — skipping GoHighLevel sync for rep concept.");
+    return { ok: false, error: "GoHighLevel not configured" };
+  }
+  if (!concept.name || (!concept.email && !concept.phone)) {
+    return { ok: false, error: "A name and an email or phone number are needed to save to the CRM." };
+  }
+
+  const { firstName, lastName } = splitName(concept.name);
+  const tags = ["Sales Rep Concept", "Residential"];
+  if (concept.rep) tags.push(`Rep: ${concept.rep}`);
+
+  const lines = [
+    `Concept created by sales rep${concept.rep ? `: ${concept.rep}` : ""} in the Blue Duck Design Studio.`,
+    "",
+    `Design: ${concept.styleLabel ?? "—"}`,
+    `Package: ${concept.packageName ?? "none selected"}`,
+  ];
+  if (concept.packageFeatures?.length) lines.push(`Components: ${concept.packageFeatures.join(", ")}`);
+  if (concept.offer) lines.push(`Offer included on the presentation: ${concept.offer}`);
+  lines.push(`Presentation PDF ${concept.emailed ? "was emailed to the customer" : "was prepared (not emailed from the tool)"}.`);
+  if (concept.notes) lines.push("", `Rep's note to customer: ${concept.notes}`);
+
+  try {
+    const contactRes = await fetch(`${GHL_API_BASE}/contacts/upsert`, {
+      method: "POST",
+      headers: ghlHeaders(),
+      body: JSON.stringify({
+        locationId: GHL_LOCATION_ID,
+        firstName,
+        lastName,
+        ...(concept.email ? { email: concept.email } : {}),
+        ...(concept.phone ? { phone: concept.phone } : {}),
+        ...(concept.address ? { address1: concept.address } : {}),
+        tags,
+        source: "Blue Duck Design Studio (sales rep)",
+      }),
+    });
+    const contactData = await contactRes.json();
+    if (!contactRes.ok) {
+      console.error("GoHighLevel concept upsert failed:", contactRes.status, contactData);
+      return { ok: false, error: contactData };
+    }
+    const contactId = contactData.contact?.id ?? contactData.id;
+    if (!contactId) return { ok: false, error: "No contact id returned" };
+
+    const noteRes = await fetch(`${GHL_API_BASE}/contacts/${contactId}/notes`, {
+      method: "POST",
+      headers: ghlHeaders(),
+      body: JSON.stringify({ body: lines.join("\n") }),
+    });
+    if (!noteRes.ok) {
+      console.error("GoHighLevel concept note failed:", noteRes.status, await noteRes.json().catch(() => null));
+      return { ok: false, error: "Contact saved but the note failed", contactId };
+    }
+    return { ok: true, contactId };
+  } catch (err) {
+    console.error("Failed to sync rep concept to GoHighLevel:", err);
+    return { ok: false, error: err.message };
+  }
+}

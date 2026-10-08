@@ -18,7 +18,7 @@ const sharpPromise = import("sharp")
 import { generateLeadPdf } from "./lead-pdf.js";
 import { sendLeadEmail, sendCustomerConfirmationEmail } from "./lead-email.js";
 import { syncLeadToCrm } from "./lead-crm.js";
-import { registerTeamRoutes } from "./team.js";
+import { registerTeamRoutes, teamReportHandler } from "./team.js";
 import { initAnalytics, ingestEvents, reportHandler, adminAuth } from "./analytics.js";
 import { apiGuard, generationGuard, leadsGuard, getClientIp, isAllowlisted, initAbuseGuard } from "./abuse-guard.js";
 
@@ -298,6 +298,7 @@ app.get("/admin", adminAuth, (req, res) => {
   res.sendFile(path.join(process.cwd(), "admin", "dashboard.html"));
 });
 app.get("/admin/api/report", adminAuth, reportHandler);
+app.get("/admin/api/team-report", adminAuth, teamReportHandler);
 
 app.get("/api/styles", (req, res) => {
   res.json({ styles: STYLES.map(({ key, label }) => ({ key, label })) });

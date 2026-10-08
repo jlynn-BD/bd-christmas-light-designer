@@ -13,12 +13,22 @@ const stepPick = $("stepPick");
 const stepPresent = $("stepPresent");
 const styleGrid = $("styleGrid");
 const pdfBtn = $("pdfBtn");
+const emailBtn = $("emailBtn");
 const pdfMsg = $("pdfMsg");
+const crmMsg = $("crmMsg");
+const customerEmail = $("customerEmail");
+const customerPhone = $("customerPhone");
+const repEmail = $("repEmail");
 
 let selectedFile = null;
 let originalDataUrl = null;
 let chosen = null; // { key, label, image }
 let chosenPackage = null;
+// One id per customer photo. It ties together the generations, PDF, email and CRM save for the same
+// concept so the activity report can measure how long a concept took. Contains no customer details.
+const newConceptId = () => (crypto.randomUUID ? crypto.randomUUID() : String(Date.now()) + Math.random().toString(16).slice(2));
+let conceptId = newConceptId();
+let crmSavedKey = null;
 
 const STYLE_LABELS = [
   { key: "warm_white", label: "Warm White" },
@@ -29,10 +39,16 @@ const STYLE_LABELS = [
 
 try {
   repName.value = localStorage.getItem("bd_team_rep") || "";
+  repEmail.value = localStorage.getItem("bd_team_rep_email") || "";
 } catch {}
 repName.addEventListener("change", () => {
   try {
     localStorage.setItem("bd_team_rep", repName.value.trim());
+  } catch {}
+});
+repEmail.addEventListener("change", () => {
+  try {
+    localStorage.setItem("bd_team_rep_email", repEmail.value.trim());
   } catch {}
 });
 
@@ -97,6 +113,8 @@ fileInput.addEventListener("change", async () => {
     r.readAsDataURL(selectedFile);
   });
   generateBtn.disabled = false;
+  conceptId = newConceptId(); // a new photo is a new concept
+  crmSavedKey = null;
   setStatus(statusMsg, "");
   stepPick.hidden = true;
   stepPresent.hidden = true;
@@ -151,6 +169,7 @@ generateBtn.addEventListener("click", async () => {
     const fd = new FormData();
     fd.append("image", selectedFile);
     fd.append("rep", repName.value.trim());
+    fd.append("concept", conceptId);
     const res = await fetch("/team/api/generate", { method: "POST", body: fd });
     const data = await readJson(res);
     if (res.status === 401) return signedOut();
@@ -190,6 +209,7 @@ function choose(style, card, imageSrc) {
   $("chosenImg").src = imageSrc;
   $("chosenLabel").textContent = style.label;
   setStatus(pdfMsg, "");
+  setStatus(crmMsg, "");
   stepPresent.hidden = false;
   stepPresent.scrollIntoView({ behavior: "smooth", block: "start" });
 }
@@ -223,29 +243,61 @@ function renderPackageOptions() {
 }
 renderPackageOptions();
 
+function conceptPayload() {
+  return {
+    concept: conceptId,
+    repName: repName.value.trim(),
+    repEmail: repEmail.value.trim(),
+    customerName: customerName.value.trim(),
+    customerEmail: customerEmail.value.trim(),
+    customerPhone: customerPhone.value.trim(),
+    address: customerAddress.value.trim(),
+    styleKey: chosen.key,
+    styleLabel: chosen.label,
+    packageKey: chosenPackage ? chosenPackage.key : "",
+    packageName: chosenPackage ? chosenPackage.name : "",
+    packageFeatures: chosenPackage ? chosenPackage.features : [],
+    includeOffer: $("includeOffer").checked,
+    notes: $("notes").value.trim(),
+    originalImage: originalDataUrl,
+    renderedImage: chosen.image,
+  };
+}
+
+const postJson = (url, body) =>
+  fetch(url, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
+
+// Saves the customer to GoHighLevel if the rep left the box ticked — once per concept/contact/design.
+async function maybeSaveToCrm(payload, emailed) {
+  if (!$("addToCrm").checked) return;
+  const hasContact = payload.customerEmail || payload.customerPhone;
+  if (!payload.customerName || !hasContact) {
+    setStatus(crmMsg, "Not saved to the CRM: add the customer's name and an email or phone number, then try again.", true);
+    return;
+  }
+  const key = [conceptId, payload.styleKey, payload.packageKey, payload.customerName, payload.customerEmail, payload.customerPhone, emailed].join("|");
+  if (key === crmSavedKey) return;
+  setStatus(crmMsg, "Saving to the CRM…");
+  try {
+    const res = await postJson("/team/api/crm", { ...payload, originalImage: undefined, renderedImage: undefined, emailed });
+    if (res.status === 401) return signedOut();
+    const data = await readJson(res);
+    if (!res.ok) throw new Error(data.error || "Couldn't save to the CRM.");
+    crmSavedKey = key;
+    setStatus(crmMsg, "✅ Customer saved to the CRM.");
+  } catch (err) {
+    setStatus(crmMsg, err instanceof TypeError ? "Couldn't reach the CRM — check your connection." : err.message, true);
+  }
+}
+
 pdfBtn.addEventListener("click", async () => {
   if (!chosen) return;
   pdfBtn.disabled = true;
   setStatus(pdfMsg, "Building the PDF…");
+  setStatus(crmMsg, "");
   try {
-    const res = await fetch("/team/api/presentation", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        repName: repName.value.trim(),
-        customerName: customerName.value.trim(),
-        address: customerAddress.value.trim(),
-        styleKey: chosen.key,
-        styleLabel: chosen.label,
-        packageKey: chosenPackage ? chosenPackage.key : "",
-        packageName: chosenPackage ? chosenPackage.name : "",
-        packageFeatures: chosenPackage ? chosenPackage.features : [],
-        includeOffer: $("includeOffer").checked,
-        notes: $("notes").value.trim(),
-        originalImage: originalDataUrl,
-        renderedImage: chosen.image,
-      }),
-    });
+    const payload = conceptPayload();
+    const res = await postJson("/team/api/presentation", payload);
     if (res.status === 401) return signedOut();
     if (!res.ok) throw new Error((await readJson(res)).error || "Couldn't build the PDF.");
 
@@ -255,11 +307,41 @@ pdfBtn.addEventListener("click", async () => {
     document.body.append(a);
     a.click();
     a.remove();
-    setStatus(pdfMsg, `✅ Saved ${name}. Attach it to an email to the customer.`);
+    setStatus(pdfMsg, `✅ Saved ${name}.`);
+    await maybeSaveToCrm(payload, false);
   } catch (err) {
     setStatus(pdfMsg, err instanceof TypeError ? "Lost the connection — try again." : err.message, true);
   } finally {
     pdfBtn.disabled = false;
+  }
+});
+
+emailBtn.addEventListener("click", async () => {
+  if (!chosen) return;
+  const to = customerEmail.value.trim();
+  if (!/^[^\s@,;]+@[^\s@,;]+\.[^\s@,;]+$/.test(to)) {
+    setStatus(pdfMsg, "Enter the customer's email address in step 1 first.", true);
+    customerEmail.scrollIntoView({ behavior: "smooth", block: "center" });
+    customerEmail.focus();
+    return;
+  }
+  // Sending to a real customer can't be undone, so make the rep confirm who it's going to.
+  if (!confirm(`Email this concept to ${to} now?\n\nThey'll receive the PDF from Blue Duck, and the office gets a copy.`)) return;
+
+  emailBtn.disabled = pdfBtn.disabled = true;
+  setStatus(pdfMsg, "Sending…");
+  setStatus(crmMsg, "");
+  try {
+    const payload = conceptPayload();
+    const res = await postJson("/team/api/send-email", payload);
+    if (res.status === 401) return signedOut();
+    if (!res.ok) throw new Error((await readJson(res)).error || "Couldn't send the email.");
+    setStatus(pdfMsg, `✅ Emailed to ${to}.`);
+    await maybeSaveToCrm(payload, true);
+  } catch (err) {
+    setStatus(pdfMsg, err instanceof TypeError ? "Lost the connection — the email may not have sent. Check before retrying." : err.message, true);
+  } finally {
+    emailBtn.disabled = pdfBtn.disabled = false;
   }
 });
 

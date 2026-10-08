@@ -37,6 +37,18 @@
           <label for="customerAddress">Property address <small>(optional)</small></label>
           <input type="text" id="customerAddress" maxlength="140" autocomplete="off" />
         </div>
+        <div class="field">
+          <label for="customerEmail">Customer email <small>(needed to email the concept)</small></label>
+          <input type="email" id="customerEmail" maxlength="120" autocomplete="off" inputmode="email" />
+        </div>
+        <div class="field">
+          <label for="customerPhone">Customer phone <small>(optional)</small></label>
+          <input type="tel" id="customerPhone" maxlength="30" autocomplete="off" />
+        </div>
+        <div class="field wide">
+          <label for="repEmail">Your email <small>(customer replies come to you — optional)</small></label>
+          <input type="email" id="repEmail" maxlength="120" autocomplete="email" inputmode="email" />
+        </div>
       </div>
 
       <label class="upload-box" id="uploadBox">
@@ -70,8 +82,14 @@
         <textarea id="notes" rows="3" maxlength="500"></textarea>
       </div>
 
-      <button type="button" id="pdfBtn">📄 Create Presentation PDF</button>
+      <label class="team-check"><input type="checkbox" id="addToCrm" checked /> Save this customer to our CRM (GoHighLevel) — needs their name and an email or phone</label>
+
+      <div class="team-actions">
+        <button type="button" id="pdfBtn">📄 Download PDF</button>
+        <button type="button" id="emailBtn" class="secondary">✉️ Email to Customer</button>
+      </div>
       <p id="pdfMsg" class="status"></p>
+      <p id="crmMsg" class="status"></p>
     </section>
 
     <p class="disclaimer">AI-generated previews are for visualization only. Actual installation may vary.</p>
