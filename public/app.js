@@ -382,47 +382,8 @@ let verifiedZip = null;
 let chosenStyle = null;
 let chosenPackage = null;
 
-const DECOR_SVG = {
-  wreath:
-    '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" preserveAspectRatio="none">' +
-    '<circle cx="32" cy="30" r="22" fill="none" stroke="#2f7d32" stroke-width="9"/>' +
-    '<circle cx="32" cy="30" r="22" fill="none" stroke="#1f5c22" stroke-width="9" stroke-dasharray="3 7"/>' +
-    '<path d="M23 46 L32 60 L41 46 L32 51 Z" fill="#c62828"/>' +
-    "</svg>",
-  bow:
-    '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" preserveAspectRatio="none">' +
-    '<path d="M32 32 L6 14 L6 50 Z" fill="#c62828"/>' +
-    '<path d="M32 32 L58 14 L58 50 Z" fill="#c62828"/>' +
-    '<circle cx="32" cy="32" r="9" fill="#8e1616"/>' +
-    "</svg>",
-  lights:
-    '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 24" preserveAspectRatio="none">' +
-    '<path d="M2 12 Q16 20 32 12 T62 12" fill="none" stroke="#2d4a2d" stroke-width="2"/>' +
-    '<circle cx="8" cy="13" r="5" fill="#e63946"/>' +
-    '<circle cx="24" cy="16" r="5" fill="#2a9d5c"/>' +
-    '<circle cx="40" cy="16" r="5" fill="#f5c842"/>' +
-    '<circle cx="56" cy="13" r="5" fill="#4a90d9"/>' +
-    "</svg>",
-  candycane:
-    '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 64" preserveAspectRatio="none">' +
-    '<path d="M20 60 V22 A10 10 0 0 0 0 22 V27" stroke="white" stroke-width="9" fill="none" stroke-linecap="round"/>' +
-    '<path d="M20 60 V22 A10 10 0 0 0 0 22 V27" stroke="#c62828" stroke-width="9" fill="none" stroke-linecap="round" stroke-dasharray="7 7"/>' +
-    "</svg>",
-};
-
-const DECOR_DEFAULT_SIZE = {
-  wreath: { w: 56, h: 56 },
-  bow: { w: 64, h: 56 },
-  lights: { w: 72, h: 27 },
-  candycane: { w: 40, h: 56 },
-};
-
-const MIN_DECOR_PX = 20;
-
-const DECOR_LABELS = { wreath: "Wreath", bow: "Bow", lights: "Extra Lights", candycane: "Candy Cane" };
-
-let decorations = [];
-let decorIdCounter = 0;
+// Decoration editor (wreath / bow / lights / candy cane) is shared with the sales tool: see decor-editor.js.
+const decorEditor = createDecorEditor({ wrap: decorCanvasWrap, baseImg: decorBaseImg });
 
 zipInput.addEventListener("input", () => {
   zipInput.value = zipInput.value.replace(/\D/g, "").slice(0, 5);
@@ -617,8 +578,7 @@ function selectStyle(style, card) {
   chosenStyle = { key: style.key, label: style.label, image: img.src, baseImage: img.src, customized: false };
   track("design_chosen", { style: style.key });
 
-  decorations = [];
-  decorCanvasWrap.querySelectorAll(".decor-item").forEach((el) => el.remove());
+  decorEditor.clear();
 
   showConfirm();
 }
@@ -735,140 +695,25 @@ function revealLeadPanel() {
 }
 
 function openCustomizePanel() {
-  decorations = [];
-  decorCanvasWrap.querySelectorAll(".decor-item").forEach((el) => el.remove());
+  decorEditor.clear();
   showLighting();
 }
 
 document.querySelectorAll(".decor-add-btn").forEach((btn) => {
-  btn.addEventListener("click", () => addDecoration(btn.dataset.decor));
+  btn.addEventListener("click", () => decorEditor.add(btn.dataset.decor));
 });
 
-function addDecoration(type) {
-  const id = `decor-${++decorIdCounter}`;
-  const jitter = () => 40 + Math.random() * 20;
-  const rect = decorCanvasWrap.getBoundingClientRect();
-  const defaultSize = DECOR_DEFAULT_SIZE[type];
-  const deco = {
-    id,
-    type,
-    xPct: jitter(),
-    yPct: jitter(),
-    wPct: (defaultSize.w / rect.width) * 100,
-    hPct: (defaultSize.h / rect.height) * 100,
-  };
-  decorations.push(deco);
-
-  const el = document.createElement("div");
-  el.className = `decor-item decor-${type}`;
-  el.id = id;
-  el.innerHTML = DECOR_SVG[type];
-  el.title = DECOR_LABELS[type];
-  applyDecorTransform(deco, el);
-
-  const removeBtn = document.createElement("button");
-  removeBtn.type = "button";
-  removeBtn.className = "decor-remove";
-  removeBtn.textContent = "✕";
-  removeBtn.addEventListener("click", (e) => {
-    e.stopPropagation();
-    decorations = decorations.filter((d) => d.id !== id);
-    el.remove();
-  });
-  el.appendChild(removeBtn);
-
-  const resizeHandle = document.createElement("div");
-  resizeHandle.className = "decor-resize-handle";
-  resizeHandle.addEventListener("pointerdown", (e) => {
-    e.stopPropagation();
-    startResize(e, deco, el);
-  });
-  el.appendChild(resizeHandle);
-
-  el.addEventListener("pointerdown", (e) => startDrag(e, deco, el));
-
-  decorCanvasWrap.appendChild(el);
-}
-
-function applyDecorTransform(deco, el) {
-  el.style.left = `${deco.xPct}%`;
-  el.style.top = `${deco.yPct}%`;
-  el.style.width = `${deco.wPct}%`;
-  el.style.height = `${deco.hPct}%`;
-}
-
-function startDrag(e, deco, el) {
-  e.preventDefault();
-  el.setPointerCapture(e.pointerId);
-  el.classList.add("dragging");
-
-  function onMove(ev) {
-    const rect = decorCanvasWrap.getBoundingClientRect();
-    let xPct = ((ev.clientX - rect.left) / rect.width) * 100;
-    let yPct = ((ev.clientY - rect.top) / rect.height) * 100;
-    xPct = Math.min(100, Math.max(0, xPct));
-    yPct = Math.min(100, Math.max(0, yPct));
-    deco.xPct = xPct;
-    deco.yPct = yPct;
-    applyDecorTransform(deco, el);
-  }
-
-  function onUp(ev) {
-    el.releasePointerCapture(ev.pointerId);
-    el.classList.remove("dragging");
-    el.removeEventListener("pointermove", onMove);
-    el.removeEventListener("pointerup", onUp);
-  }
-
-  el.addEventListener("pointermove", onMove);
-  el.addEventListener("pointerup", onUp);
-}
-
-function startResize(e, deco, el) {
-  e.preventDefault();
-  const handle = e.target;
-  handle.setPointerCapture(e.pointerId);
-  el.classList.add("resizing");
-
-  const rect = decorCanvasWrap.getBoundingClientRect();
-  const startX = e.clientX;
-  const startY = e.clientY;
-  const startWpx = (deco.wPct / 100) * rect.width;
-  const startHpx = (deco.hPct / 100) * rect.height;
-
-  function onMove(ev) {
-    const deltaX = (ev.clientX - startX) * 2;
-    const deltaY = (ev.clientY - startY) * 2;
-    const newWpx = Math.min(rect.width, Math.max(MIN_DECOR_PX, startWpx + deltaX));
-    const newHpx = Math.min(rect.height, Math.max(MIN_DECOR_PX, startHpx + deltaY));
-    deco.wPct = (newWpx / rect.width) * 100;
-    deco.hPct = (newHpx / rect.height) * 100;
-    applyDecorTransform(deco, el);
-  }
-
-  function onUp(ev) {
-    handle.releasePointerCapture(ev.pointerId);
-    el.classList.remove("resizing");
-    handle.removeEventListener("pointermove", onMove);
-    handle.removeEventListener("pointerup", onUp);
-  }
-
-  handle.addEventListener("pointermove", onMove);
-  handle.addEventListener("pointerup", onUp);
-}
-
 customizeResetBtn.addEventListener("click", () => {
-  decorations = [];
-  decorCanvasWrap.querySelectorAll(".decor-item").forEach((el) => el.remove());
+  decorEditor.clear();
 });
 
 customizeDoneBtn.addEventListener("click", async () => {
   customizeDoneBtn.disabled = true;
   try {
-    const flattened = await flattenDesign();
+    const flattened = await decorEditor.flatten();
     chosenStyle.image = flattened;
     chosenStyle.customized = true;
-    track("customize_done", { count: decorations.length });
+    track("customize_done", { count: decorEditor.count() });
     openPackagePanel();
   } catch {
     alert("Something went wrong applying your decorations. Please try again.");
@@ -876,40 +721,6 @@ customizeDoneBtn.addEventListener("click", async () => {
     customizeDoneBtn.disabled = false;
   }
 });
-
-function loadImageFromSvg(svgString) {
-  return new Promise((resolve, reject) => {
-    const img = new Image();
-    img.onload = () => resolve(img);
-    img.onerror = reject;
-    img.src = "data:image/svg+xml;charset=utf-8," + encodeURIComponent(svgString);
-  });
-}
-
-async function flattenDesign() {
-  const rect = decorCanvasWrap.getBoundingClientRect();
-  const scaleX = decorBaseImg.naturalWidth / rect.width;
-  const scaleY = decorBaseImg.naturalHeight / rect.height;
-
-  const canvas = document.createElement("canvas");
-  canvas.width = decorBaseImg.naturalWidth;
-  canvas.height = decorBaseImg.naturalHeight;
-  const ctx = canvas.getContext("2d");
-  ctx.drawImage(decorBaseImg, 0, 0, canvas.width, canvas.height);
-
-  for (const deco of decorations) {
-    const el = document.getElementById(deco.id);
-    if (!el) continue;
-    const w = el.offsetWidth * scaleX;
-    const h = el.offsetHeight * scaleY;
-    const centerX = (deco.xPct / 100) * canvas.width;
-    const centerY = (deco.yPct / 100) * canvas.height;
-    const img = await loadImageFromSvg(DECOR_SVG[deco.type]);
-    ctx.drawImage(img, centerX - w / 2, centerY - h / 2, w, h);
-  }
-
-  return canvas.toDataURL("image/jpeg", 0.92);
-}
 
 leadForm.addEventListener("submit", async (e) => {
   e.preventDefault();
@@ -1029,8 +840,7 @@ fileInput.addEventListener("change", async () => {
   approvalPanel.hidden = true;
   customizePanel.hidden = true;
   packagePanel.hidden = true;
-  decorations = [];
-  decorCanvasWrap.querySelectorAll(".decor-item").forEach((el) => el.remove());
+  decorEditor.clear();
   leadPanel.hidden = true;
   leadForm.hidden = false;
   leadForm.reset();

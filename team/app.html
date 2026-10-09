@@ -67,8 +67,18 @@
 
     <section class="team-card" id="stepPresent" hidden>
       <h2><span class="num">3</span> Build the presentation</h2>
-      <img id="chosenImg" class="chosen-img" alt="Chosen design" />
       <p class="chosen-label">Selected design: <strong id="chosenLabel"></strong></p>
+      <p class="gate-copy">Optional: add decorations for a window or door. Drag to place, drag the gold corner to resize, ✕ removes one.</p>
+      <div class="decor-palette">
+        <button type="button" class="decor-add-btn" data-decor="wreath">🎄 Wreath</button>
+        <button type="button" class="decor-add-btn" data-decor="bow">🎀 Bow</button>
+        <button type="button" class="decor-add-btn" data-decor="lights">💡 Extra Lights</button>
+        <button type="button" class="decor-add-btn" data-decor="candycane">🍬 Candy Cane</button>
+      </div>
+      <div class="decor-canvas-wrap" id="decorCanvasWrap">
+        <img id="chosenImg" alt="Chosen design" />
+      </div>
+      <button type="button" id="decorClearBtn" class="link-btn">Clear decorations</button>
 
       <fieldset class="team-packages">
         <legend>Package <small>(optional)</small></legend>
@@ -98,6 +108,7 @@
   <div class="team-lightbox" id="lightbox" hidden><img id="lightboxImg" alt="" /></div>
 
   <script src="/packages.js"></script>
+  <script src="/decor-editor.js"></script>
   <script src="/team/assets/team.js"></script>
 </body>
 </html>

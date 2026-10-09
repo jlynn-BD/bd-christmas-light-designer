@@ -89,6 +89,7 @@ function readConcept(b, offer) {
     phone: clean(b.customerPhone, 30),
     styleKey: clean(b.styleKey, 30),
     styleLabel: clean(b.styleLabel, 60),
+    customized: Boolean(b.customized),
     packageKey: clean(b.packageKey, 30),
     packageName: clean(b.packageName, 60) || null,
     packageFeatures: Array.isArray(b.packageFeatures) ? b.packageFeatures.slice(0, 8).map((f) => clean(f, 40)) : [],
@@ -102,12 +103,15 @@ function readConcept(b, offer) {
 
 const conceptReady = (c, b) => Boolean(c.styleLabel) && /^data:image\//.test(String(b.renderedImage ?? ""));
 
+// What the customer (and the CRM note) should see as the design name.
+const designName = (c) => (c.customized ? `${c.styleLabel} (customized)` : c.styleLabel);
+
 const pdfOf = (c) =>
   generatePresentationPdf({
     customerName: c.customerName,
     address: c.address,
     repName: c.rep,
-    styleLabel: c.styleLabel,
+    styleLabel: designName(c),
     packageName: c.packageName,
     packageFeatures: c.packageFeatures,
     offer: c.offer,
@@ -231,7 +235,7 @@ export function registerTeamRoutes(app, { express, upload, STYLES, generateStyle
     if (!conceptReady(c, b)) return res.status(400).json({ error: "Pick a design first." });
     try {
       const pdf = await pdfOf(c);
-      logActivity("pdf", c.rep, { style: c.styleKey, package: c.packageKey || "none", offer: Boolean(c.offer), concept: c.concept });
+      logActivity("pdf", c.rep, { style: c.styleKey, package: c.packageKey || "none", offer: Boolean(c.offer), customized: c.customized, concept: c.concept });
       const safe = c.customerName.slice(0, 40).replace(/[^A-Za-z0-9]+/g, "-").replace(/^-+|-+$/g, "") || "Customer";
       res.set({ "Content-Type": "application/pdf", "Content-Disposition": `attachment; filename="Blue-Duck-Concept-${safe}.pdf"` });
       res.send(pdf);
@@ -268,7 +272,7 @@ export function registerTeamRoutes(app, { express, upload, STYLES, generateStyle
         repName: c.rep,
         repEmail: repEmail || null,
         pdfBuffer,
-        styleLabel: c.styleLabel,
+        styleLabel: designName(c),
         packageName: c.packageName,
         offer: c.offer,
       });
@@ -276,7 +280,7 @@ export function registerTeamRoutes(app, { express, upload, STYLES, generateStyle
 
       emailTimes.push(now);
       recipientSends.set(c.email, [...mine, now]);
-      logActivity("email", c.rep, { style: c.styleKey, package: c.packageKey || "none", offer: Boolean(c.offer), concept: c.concept });
+      logActivity("email", c.rep, { style: c.styleKey, package: c.packageKey || "none", offer: Boolean(c.offer), customized: c.customized, concept: c.concept });
       res.json({ ok: true });
     } catch (err) {
       console.error("[team] emailing concept failed:", err);
@@ -299,7 +303,7 @@ export function registerTeamRoutes(app, { express, upload, STYLES, generateStyle
       phone: phoneDigits.length >= 7 ? c.phone : null,
       address: c.address,
       rep: c.rep,
-      styleLabel: c.styleLabel,
+      styleLabel: designName(c),
       packageName: c.packageName,
       packageFeatures: c.packageFeatures,
       offer: c.offer,
@@ -325,7 +329,7 @@ const topList = (map, n = 10) => [...map.entries()].sort((a, b) => b[1] - a[1]).
 const pct = (n, d) => (d ? Math.round((n / d) * 1000) / 10 : 0);
 
 /** rows: [{ event, rep, props, t }] (t = ms). Pure function so it can be tested without a database. */
-export function buildTeamReport(rows, { now = Date.now(), days = 30, tz = "America/Indiana/Indianapolis" } = {}) {
+export function buildTeamReport(rows, { now = Date.now(), days = 30, tz = "America/Indiana/Indianapolis", manualMinutes = null } = {}) {
   const reps = new Map(); // key -> { names: Map, generations, concepts:Set, pdfs, emails, crm, minutes:[] }
   const getRep = (name) => {
     const k = repKey(name);
@@ -374,10 +378,13 @@ export function buildTeamReport(rows, { now = Date.now(), days = 30, tz = "Ameri
   const packages = new Map();
   let delivered = 0;
   let withOffer = 0;
+  let customized = 0;
+  let savedMinutes = 0; // vs. the office's stated time for a manual concept (only when configured)
   for (const c of concepts.values()) {
     if (!c.firstDeliver) continue;
     delivered += 1;
     if (c.last?.offer) withOffer += 1;
+    if (c.last?.customized) customized += 1;
     styles.set(c.last?.style || "unknown", (styles.get(c.last?.style || "unknown") ?? 0) + 1);
     packages.set(c.last?.package || "none", (packages.get(c.last?.package || "none") ?? 0) + 1);
     if (c.firstGen) {
@@ -385,6 +392,7 @@ export function buildTeamReport(rows, { now = Date.now(), days = 30, tz = "Ameri
       if (min >= 0 && min <= 240) {
         allMinutes.push(min);
         getRep(c.rep).minutes.push(min);
+        if (manualMinutes) savedMinutes += Math.max(0, manualMinutes - min);
       }
     }
   }
@@ -411,6 +419,10 @@ export function buildTeamReport(rows, { now = Date.now(), days = 30, tz = "Ameri
       emails: sum("emails"),
       crmAdds: sum("crm"),
       offerPct: pct(withOffer, delivered),
+      customizedPct: pct(customized, delivered),
+      manualMinutes: manualMinutes || null,
+      hoursSaved: manualMinutes && allMinutes.length ? Math.round((savedMinutes / 60) * 10) / 10 : null,
+      measuredConcepts: allMinutes.length,
       activeReps: repRows.length,
       medianMinutesToFinish: allMinutes.length ? Math.round(median(allMinutes) * 10) / 10 : null,
     },
@@ -438,7 +450,7 @@ export async function teamReportHandler(req, res) {
       rows = memoryActivity.filter((x) => x.t >= since);
     }
     res.set("Cache-Control", "no-store");
-    res.json(buildTeamReport(rows, { days }));
+    res.json(buildTeamReport(rows, { days, manualMinutes: Number(process.env.TEAM_MANUAL_MINUTES) || null }));
   } catch (err) {
     console.error("[team] report failed:", err);
     res.status(500).json({ error: "Could not build the report." });

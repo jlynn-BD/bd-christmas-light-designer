@@ -349,6 +349,8 @@ function renderTeam(r) {
     tile(fmt(t.emails), "Emailed to customers"),
     tile(fmt(t.crmAdds), "Saved to CRM"),
     tile(`${t.offerPct}%`, "Included the 50% offer"),
+    tile(`${t.customizedPct}%`, "Customized with decorations"),
+    ...(t.hoursSaved != null ? [tile(`${t.hoursSaved} hr`, `Est. time saved vs. ${t.manualMinutes} min per manual concept (${t.measuredConcepts} measured)`)] : []),
   ));
 
   const tbl = el("table");
@@ -384,7 +386,8 @@ function downloadTeamCsv() {
   add("SUMMARY");
   add("Concepts started", r.totals.concepts); add("Presentations finished", r.totals.delivered); add("Designs generated", r.totals.generations);
   add("PDFs created", r.totals.pdfs); add("Emailed to customers", r.totals.emails); add("Saved to CRM", r.totals.crmAdds);
-  add("Offer included %", r.totals.offerPct); add("Typical minutes photo to finished", r.totals.medianMinutesToFinish ?? "");
+  add("Offer included %", r.totals.offerPct); add("Customized with decorations %", r.totals.customizedPct);
+  if (r.totals.hoursSaved != null) add(`Estimated hours saved vs ${r.totals.manualMinutes} min manual concept`, r.totals.hoursSaved); add("Typical minutes photo to finished", r.totals.medianMinutesToFinish ?? "");
   add();
   add("BY REP"); add("Rep", "Concepts", "Designs generated", "PDFs", "Emailed", "CRM saves", "Typical minutes");
   r.reps.forEach((x) => add(x.name, x.concepts, x.generations, x.pdfs, x.emails, x.crm, x.medianMinutes ?? ""));

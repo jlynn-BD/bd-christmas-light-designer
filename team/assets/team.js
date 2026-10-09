@@ -30,6 +30,11 @@ const newConceptId = () => (crypto.randomUUID ? crypto.randomUUID() : String(Dat
 let conceptId = newConceptId();
 let crmSavedKey = null;
 
+// Optional wreaths/bows/lights drawn on the chosen design (shared with the customer app: decor-editor.js).
+const editor = createDecorEditor({ wrap: $("decorCanvasWrap"), baseImg: $("chosenImg") });
+document.querySelectorAll(".decor-add-btn").forEach((b) => b.addEventListener("click", () => editor.add(b.dataset.decor)));
+$("decorClearBtn").addEventListener("click", () => editor.clear());
+
 const STYLE_LABELS = [
   { key: "warm_white", label: "Warm White" },
   { key: "multicolor", label: "Multicolored" },
@@ -206,6 +211,7 @@ function choose(style, card, imageSrc) {
   document.querySelectorAll(".style-card.selected").forEach((el) => el.classList.remove("selected"));
   card.classList.add("selected");
   chosen = { key: style.key, label: style.label, image: imageSrc };
+  editor.clear(); // a different base design starts clean
   $("chosenImg").src = imageSrc;
   $("chosenLabel").textContent = style.label;
   setStatus(pdfMsg, "");
@@ -243,7 +249,8 @@ function renderPackageOptions() {
 }
 renderPackageOptions();
 
-function conceptPayload() {
+async function conceptPayload() {
+  const decorated = editor.count() > 0;
   return {
     concept: conceptId,
     repName: repName.value.trim(),
@@ -260,7 +267,9 @@ function conceptPayload() {
     includeOffer: $("includeOffer").checked,
     notes: $("notes").value.trim(),
     originalImage: originalDataUrl,
-    renderedImage: chosen.image,
+    // If the rep added decorations, burn them into the picture the customer receives.
+    renderedImage: decorated ? await editor.flatten() : chosen.image,
+    customized: decorated,
   };
 }
 
@@ -296,7 +305,7 @@ pdfBtn.addEventListener("click", async () => {
   setStatus(pdfMsg, "Building the PDF…");
   setStatus(crmMsg, "");
   try {
-    const payload = conceptPayload();
+    const payload = await conceptPayload();
     const res = await postJson("/team/api/presentation", payload);
     if (res.status === 401) return signedOut();
     if (!res.ok) throw new Error((await readJson(res)).error || "Couldn't build the PDF.");
@@ -332,7 +341,7 @@ emailBtn.addEventListener("click", async () => {
   setStatus(pdfMsg, "Sending…");
   setStatus(crmMsg, "");
   try {
-    const payload = conceptPayload();
+    const payload = await conceptPayload();
     const res = await postJson("/team/api/send-email", payload);
     if (res.status === 401) return signedOut();
     if (!res.ok) throw new Error((await readJson(res)).error || "Couldn't send the email.");
