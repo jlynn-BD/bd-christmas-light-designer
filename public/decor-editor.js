@@ -152,6 +152,9 @@ function createDecorEditor({ wrap, baseImg }) {
     removeBtn.type = "button";
     removeBtn.className = "decor-remove";
     removeBtn.textContent = "✕";
+    // Pressing ✕ must not start a drag of the decoration: the drag captures the pointer, which would
+    // swallow the click that actually removes it (the resize handle below does the same).
+    removeBtn.addEventListener("pointerdown", (e) => e.stopPropagation());
     removeBtn.addEventListener("click", (e) => {
       e.stopPropagation();
       decorations = decorations.filter((d) => d !== deco);

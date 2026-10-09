@@ -1121,6 +1121,9 @@ a,
   }
 
   .decor-remove {
+    /* the blanket 44px button rule above would stretch this into an oval */
+    min-width: 0;
+    min-height: 0;
     width: 28px;
     height: 28px;
     top: -12px;
