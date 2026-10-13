@@ -68,6 +68,15 @@
     <section class="team-card" id="stepPresent" hidden>
       <h2><span class="num">3</span> Build the presentation</h2>
       <p class="chosen-label">Selected design: <strong id="chosenLabel"></strong></p>
+
+      <fieldset class="team-packages">
+        <legend>Package <small>(its features are added to the picture)</small></legend>
+        <div id="packageOptions"></div>
+      </fieldset>
+      <div id="pkgRenderBox" class="pkg-render-box" hidden>
+        <p id="pkgRenderMsg" class="status"></p>
+        <button type="button" id="pkgRetryBtn" class="secondary" hidden>↻ Try adding the package again</button>
+      </div>
       <p class="gate-copy">Optional: add decorations for a window or door. Drag to place, drag the gold corner to resize, ✕ removes one.</p>
       <div class="decor-palette">
         <button type="button" class="decor-add-btn" data-decor="wreath">🎄 Wreath</button>
@@ -80,10 +89,6 @@
       </div>
       <button type="button" id="decorClearBtn" class="link-btn">Clear decorations</button>
 
-      <fieldset class="team-packages">
-        <legend>Package <small>(optional)</small></legend>
-        <div id="packageOptions"></div>
-      </fieldset>
 
       <label class="team-check"><input type="checkbox" id="includeOffer" checked /> Include the current offer (50% off Year 1 with a signed 3-year agreement)</label>
 

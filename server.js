@@ -18,6 +18,7 @@ const sharpPromise = import("sharp")
 import { generateLeadPdf } from "./lead-pdf.js";
 import { sendLeadEmail, sendCustomerConfirmationEmail } from "./lead-email.js";
 import { syncLeadToCrm } from "./lead-crm.js";
+import { editImageWithPrompt } from "./image-edit.js";
 import { registerTeamRoutes, teamReportHandler } from "./team.js";
 import { initAnalytics, ingestEvents, reportHandler, adminAuth } from "./analytics.js";
 import { apiGuard, generationGuard, leadsGuard, getClientIp, isAllowlisted, initAbuseGuard } from "./abuse-guard.js";
@@ -211,61 +212,20 @@ function buildPrompt(lightDescription) {
 }
 
 async function generateStyledImage(fileBuffer, mimeType, lightDescription) {
-  const contents = [
-    { text: buildPrompt(lightDescription) },
-    {
-      inlineData: {
-        mimeType,
-        data: fileBuffer.toString("base64"),
-      },
-    },
-  ];
-
-  const MAX_ATTEMPTS = 3;
-  let imagePart = null;
-  let lastTextReply = null;
-
-  for (let attempt = 1; attempt <= MAX_ATTEMPTS && !imagePart; attempt++) {
-    try {
-      const response = await ai.models.generateContent({
-        model: "gemini-2.5-flash-image",
-        contents,
-      });
-
-      const parts = response.candidates?.[0]?.content?.parts ?? [];
-      imagePart = parts.find((p) => p.inlineData) ?? null;
-      lastTextReply = parts.find((p) => p.text)?.text ?? lastTextReply;
-    } catch (err) {
-      const retryable = /429|503|RESOURCE_EXHAUSTED|UNAVAILABLE/.test(err.message ?? "");
-      if (!retryable || attempt === MAX_ATTEMPTS) throw err;
-    }
-
-    if (!imagePart && attempt < MAX_ATTEMPTS) {
-      await new Promise((r) => setTimeout(r, 1000 * attempt));
-    }
-  }
-
-  if (!imagePart) {
-    throw new Error(lastTextReply ? `Model returned no image: ${lastTextReply}` : "Model returned no image.");
-  }
-
-  // The model returns ~2.5-3MB PNGs; four of those is a ~12MB response (and a ~12MB database row
-  // per lead) on a phone's cellular connection. A q90 JPEG is visually identical at ~1/7 the size.
-  try {
-    const sharp = await sharpPromise;
-    if (!sharp) throw new Error("sharp not loaded");
-    const jpeg = await sharp(Buffer.from(imagePart.inlineData.data, "base64"))
-      .jpeg({ quality: 90, chromaSubsampling: "4:4:4", mozjpeg: true })
-      .toBuffer();
-    return `data:image/jpeg;base64,${jpeg.toString("base64")}`;
-  } catch (err) {
-    console.error("JPEG conversion failed, returning original image:", err);
-    return `data:${imagePart.inlineData.mimeType};base64,${imagePart.inlineData.data}`;
-  }
+  return editImageWithPrompt({ ai, sharpPromise, fileBuffer, mimeType, prompt: buildPrompt(lightDescription) });
 }
 
 // Internal sales tool (/team). Registered before the global body parser because it sets its own limits.
-registerTeamRoutes(app, { express, upload, STYLES, generateStyledImage, sharpPromise: sharpPromise, pool, offer: CURRENT_OFFER });
+registerTeamRoutes(app, {
+  express,
+  upload,
+  STYLES,
+  generateStyledImage,
+  editImage: (buffer, mimeType, prompt) => editImageWithPrompt({ ai, sharpPromise, fileBuffer: buffer, mimeType, prompt }),
+  sharpPromise,
+  pool,
+  offer: CURRENT_OFFER,
+});
 
 // Guards run BEFORE body parsing so a throttled request never costs us the upload/JSON parse.
 // Only /api/leads legitimately carries big payloads (the house photo + rendered design as data URLs);

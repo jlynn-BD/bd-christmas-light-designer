@@ -4,6 +4,7 @@ import { teamEnabled, passwordMatches, hasTeamSession, startTeamSession, endTeam
 import { generatePresentationPdf } from "./team-pdf.js";
 import { sendConceptEmail } from "./lead-email.js";
 import { syncConceptToCrm } from "./lead-crm.js";
+import { loadPackages, renderPackage, extraFeaturesOf } from "./package-render.js";
 
 /**
  * Internal sales tool (/team): upload a customer's house photo -> generate designs -> pick one ->
@@ -122,8 +123,9 @@ const pdfOf = (c) =>
 
 const noStore = (res) => res.set({ "Cache-Control": "no-store", "X-Robots-Tag": "noindex, nofollow" });
 
-export function registerTeamRoutes(app, { express, upload, STYLES, generateStyledImage, sharpPromise, pool, offer }) {
+export function registerTeamRoutes(app, { express, upload, STYLES, generateStyledImage, editImage, sharpPromise, pool, offer }) {
   ensureTables(pool);
+  const packages = loadPackages().PACKAGES;
   const teamDir = path.join(process.cwd(), "team");
 
   // Public, secret-free front-end files (the pages themselves are gated below).
@@ -224,6 +226,43 @@ export function registerTeamRoutes(app, { express, upload, STYLES, generateStyle
         logActivity("generate", rep, { ok, failed: results.length - ok, concept });
       }
       res.json({ results, used: genTimes.length, limit: DAILY_LIMIT });
+    } finally {
+      inFlight -= 1;
+    }
+  });
+
+  // Show a package's extras (wreath, trees & shrubs, driveway/sidewalk stakes) on the chosen design.
+  // One call = a few small AI edits, so it counts as one unit of the team's daily generation allowance.
+  app.post("/team/api/package-render", requireTeam, express.json({ limit: "30mb" }), async (req, res) => {
+    const b = req.body ?? {};
+    const pkg = packages.find((p) => p.key === b.packageKey);
+    const styleKey = clean(b.styleKey, 30);
+    const m = /^data:(image\/\w+);base64,(.+)$/.exec(String(b.image ?? ""));
+    if (!pkg || !m || !STYLES.some((s) => s.key === styleKey)) {
+      return res.status(400).json({ error: "Pick a design and a package first." });
+    }
+    if (!extraFeaturesOf(pkg).length) return res.json({ image: null, applied: [], failed: [], used: genTimes.length, limit: DAILY_LIMIT });
+    if (!process.env.GEMINI_API_KEY) return res.status(500).json({ error: "Server is missing GEMINI_API_KEY." });
+
+    pruneGenTimes();
+    if (inFlight >= MAX_CONCURRENT) return res.status(503).json({ error: "The design engine is busy with other team members. Try again in a moment." });
+    if (genTimes.length >= DAILY_LIMIT) {
+      return res.status(429).json({ error: `The team has reached today's limit of ${DAILY_LIMIT} design generations. It frees up gradually over the next 24 hours.` });
+    }
+
+    const rep = clean(b.repName, 40);
+    const now = Date.now();
+    genTimes.push(now);
+    inFlight += 1;
+    try {
+      const result = await renderPackage({ editImage, imageBuffer: Buffer.from(m[2], "base64"), mimeType: m[1], styleKey, pkg });
+      if (!result.applied.length) {
+        const i = genTimes.indexOf(now); // nothing worked — don't charge the allowance
+        if (i !== -1) genTimes.splice(i, 1);
+      } else {
+        logActivity("package_render", rep, { package: pkg.key, applied: result.applied.length, failed: result.failed.length, concept: cleanConceptId(b.concept) });
+      }
+      res.json({ ...result, used: genTimes.length, limit: DAILY_LIMIT });
     } finally {
       inFlight -= 1;
     }

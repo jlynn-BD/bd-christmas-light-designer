@@ -26,6 +26,9 @@
 .team-lightbox { position: fixed; inset: 0; background: rgba(0,0,0,0.88); display: flex; align-items: center; justify-content: center; z-index: 50; padding: 12px; cursor: zoom-out; }
 .team-lightbox[hidden] { display: none; }
 .team-lightbox img { max-width: 100%; max-height: 100%; border-radius: 8px; }
+.pkg-render-box { margin: 0 0 14px; }
+.pkg-render-box .status { margin: 6px 0; }
+.decor-canvas-wrap.rendering img { opacity: 0.45; filter: grayscale(0.4); transition: opacity 0.2s; }
 .team-actions { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 4px; }
 .team-actions button { flex: 1 1 200px; }
 @media (max-width: 640px) { .team-fields { grid-template-columns: 1fr; } }

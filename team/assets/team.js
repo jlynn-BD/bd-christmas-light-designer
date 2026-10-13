@@ -30,6 +30,16 @@ const newConceptId = () => (crypto.randomUUID ? crypto.randomUUID() : String(Dat
 let conceptId = newConceptId();
 let crmSavedKey = null;
 
+// The picture currently shown in step 3: the chosen roofline design, or that design with the chosen
+// package's extras added (wreath, trees, stakes). Package renders are cached per generation + design +
+// package, so flipping between packages never pays for the same picture twice.
+let currentBase = null;
+let generationId = 0;
+let renderSeq = 0;
+let pkgBusy = false;
+let pkgIncomplete = false;
+const packageCache = new Map();
+
 // Optional wreaths/bows/lights drawn on the chosen design (shared with the customer app: decor-editor.js).
 const editor = createDecorEditor({ wrap: $("decorCanvasWrap"), baseImg: $("chosenImg") });
 document.querySelectorAll(".decor-add-btn").forEach((b) => b.addEventListener("click", () => editor.add(b.dataset.decor)));
@@ -163,6 +173,8 @@ generateBtn.addEventListener("click", async () => {
     return;
   }
   generateBtn.disabled = true;
+  generationId += 1;
+  packageCache.clear();
   setStatus(statusMsg, "🎄 Creating the four designs… this takes up to a minute.");
   stepPick.hidden = false;
   stepPresent.hidden = true;
@@ -211,13 +223,92 @@ function choose(style, card, imageSrc) {
   document.querySelectorAll(".style-card.selected").forEach((el) => el.classList.remove("selected"));
   card.classList.add("selected");
   chosen = { key: style.key, label: style.label, image: imageSrc };
-  editor.clear(); // a different base design starts clean
-  $("chosenImg").src = imageSrc;
+  showPicture(imageSrc); // a different base design starts clean
   $("chosenLabel").textContent = style.label;
   setStatus(pdfMsg, "");
   setStatus(crmMsg, "");
   stepPresent.hidden = false;
   stepPresent.scrollIntoView({ behavior: "smooth", block: "start" });
+  renderPackageOnHouse(); // if a package is already ticked, show it on this design
+}
+
+function showPicture(src) {
+  currentBase = src;
+  editor.clear(); // decorations were placed on the old picture
+  $("chosenImg").src = src;
+}
+
+const extrasOf = (pkg) => (pkg ? pkg.features.filter((f) => f !== "Roofline") : []);
+
+function setPackageUi(message, { busy = false, retry = false, isError = false } = {}) {
+  pkgBusy = busy;
+  $("pkgRenderBox").hidden = !message;
+  setStatus($("pkgRenderMsg"), message, isError);
+  $("pkgRetryBtn").hidden = !retry;
+  $("decorCanvasWrap").classList.toggle("rendering", busy);
+  pdfBtn.disabled = emailBtn.disabled = busy;
+}
+
+// Draws the chosen package's features onto the chosen design (server-side AI edits, one per feature).
+async function renderPackageOnHouse() {
+  if (!chosen) return;
+  const seq = ++renderSeq;
+  pkgIncomplete = false;
+  const extras = extrasOf(chosenPackage);
+
+  if (!chosenPackage || !extras.length) {
+    showPicture(chosen.image);
+    setPackageUi("");
+    return;
+  }
+
+  const key = `${generationId}|${chosen.key}|${chosenPackage.key}`;
+  if (packageCache.has(key)) {
+    showPicture(packageCache.get(key));
+    setPackageUi("");
+    return;
+  }
+
+  showPicture(chosen.image);
+  setPackageUi(`✨ Adding the ${chosenPackage.name} features to the house (${extras.join(", ").toLowerCase()})… this takes up to a minute.`, { busy: true });
+  try {
+    const res = await postJson("/team/api/package-render", {
+      styleKey: chosen.key,
+      packageKey: chosenPackage.key,
+      image: chosen.image,
+      repName: repName.value.trim(),
+      concept: conceptId,
+    });
+    if (res.status === 401) return signedOut();
+    const data = await readJson(res);
+    if (seq !== renderSeq) return; // the rep already picked something else; ignore this stale answer
+    if (!res.ok) throw new Error(data.error || "Couldn't add the package to the picture.");
+    refreshUsage(data);
+
+    if (data.image) {
+      showPicture(data.image);
+      if (!data.failed.length) packageCache.set(key, data.image); // only cache complete renders
+    }
+    if (data.failed.length) {
+      pkgIncomplete = true;
+      setPackageUi(`⚠️ Couldn't add: ${data.failed.join(", ")}. The picture shows ${data.applied.length ? data.applied.join(", ").toLowerCase() : "only the roofline"}.`, { retry: true, isError: true });
+    } else {
+      setPackageUi(`✅ ${chosenPackage.name} features added to the house.`);
+    }
+  } catch (err) {
+    if (seq !== renderSeq) return;
+    pkgIncomplete = true;
+    setPackageUi(err instanceof TypeError ? "Lost the connection while adding the package — try again." : err.message, { retry: true, isError: true });
+  }
+}
+$("pkgRetryBtn").addEventListener("click", () => {
+  packageCache.delete(`${generationId}|${chosen?.key}|${chosenPackage?.key}`);
+  renderPackageOnHouse();
+});
+
+// Never send a picture that's missing part of the package without the rep knowing.
+function confirmIncompletePicture() {
+  return !pkgIncomplete || confirm("The picture doesn't show every feature of this package yet.\n\nSend it anyway?");
 }
 
 function renderPackageOptions() {
@@ -231,7 +322,10 @@ function renderPackageOptions() {
     radio.name = "pkg";
     radio.value = p.key;
     radio.checked = p.key === "";
-    radio.addEventListener("change", () => (chosenPackage = p.key ? p : null));
+    radio.addEventListener("change", () => {
+      chosenPackage = p.key ? p : null;
+      renderPackageOnHouse();
+    });
     const text = document.createElement("span");
     const name = document.createElement("span");
     name.className = "pk-name";
@@ -268,7 +362,7 @@ async function conceptPayload() {
     notes: $("notes").value.trim(),
     originalImage: originalDataUrl,
     // If the rep added decorations, burn them into the picture the customer receives.
-    renderedImage: decorated ? await editor.flatten() : chosen.image,
+    renderedImage: decorated ? await editor.flatten() : currentBase,
     customized: decorated,
   };
 }
@@ -300,7 +394,8 @@ async function maybeSaveToCrm(payload, emailed) {
 }
 
 pdfBtn.addEventListener("click", async () => {
-  if (!chosen) return;
+  if (!chosen || pkgBusy) return;
+  if (!confirmIncompletePicture()) return;
   pdfBtn.disabled = true;
   setStatus(pdfMsg, "Building the PDF…");
   setStatus(crmMsg, "");
@@ -326,7 +421,7 @@ pdfBtn.addEventListener("click", async () => {
 });
 
 emailBtn.addEventListener("click", async () => {
-  if (!chosen) return;
+  if (!chosen || pkgBusy) return;
   const to = customerEmail.value.trim();
   if (!/^[^\s@,;]+@[^\s@,;]+\.[^\s@,;]+$/.test(to)) {
     setStatus(pdfMsg, "Enter the customer's email address in step 1 first.", true);
@@ -335,6 +430,7 @@ emailBtn.addEventListener("click", async () => {
     return;
   }
   // Sending to a real customer can't be undone, so make the rep confirm who it's going to.
+  if (!confirmIncompletePicture()) return;
   if (!confirm(`Email this concept to ${to} now?\n\nThey'll receive the PDF from Blue Duck, and the office gets a copy.`)) return;
 
   emailBtn.disabled = pdfBtn.disabled = true;
