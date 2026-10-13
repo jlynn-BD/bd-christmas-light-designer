@@ -5,6 +5,8 @@ import { generatePresentationPdf } from "./team-pdf.js";
 import { sendConceptEmail } from "./lead-email.js";
 import { syncConceptToCrm } from "./lead-crm.js";
 import { loadPackages, renderPackage, extraFeaturesOf } from "./package-render.js";
+import { SERVICE_DOWN_KINDS } from "./image-edit.js";
+import { reportAiProblem, STAFF_DOWN_MESSAGE } from "./ops-alerts.js";
 
 /**
  * Internal sales tool (/team): upload a customer's house photo -> generate designs -> pick one ->
@@ -213,6 +215,14 @@ export function registerTeamRoutes(app, { express, upload, STYLES, generateStyle
       const settled = await Promise.allSettled(
         STYLES.map((style, i) => new Promise((r) => setTimeout(r, i * 400)).then(() => generateStyledImage(buffer, mimetype, style.description)))
       );
+      const failures = settled.filter((s) => s.status === "rejected");
+      const downKind = failures.map((f) => f.reason?.kind).find((k) => SERVICE_DOWN_KINDS.includes(k));
+      if (downKind && failures.length === STYLES.length) {
+        reportAiProblem(downKind, failures[0].reason?.message);
+        const i = genTimes.indexOf(now); // the AI service is down — don't charge the team's allowance
+        if (i !== -1) genTimes.splice(i, 1);
+        return res.status(503).json({ error: STAFF_DOWN_MESSAGE[downKind], code: "unavailable" });
+      }
       const results = STYLES.map((style, i) =>
         settled[i].status === "fulfilled"
           ? { key: style.key, label: style.label, image: settled[i].value }
@@ -256,13 +266,20 @@ export function registerTeamRoutes(app, { express, upload, STYLES, generateStyle
     inFlight += 1;
     try {
       const result = await renderPackage({ editImage, imageBuffer: Buffer.from(m[2], "base64"), mimeType: m[1], styleKey, pkg });
+      const downKind = result.errorKinds.find((k) => SERVICE_DOWN_KINDS.includes(k));
+      if (!result.applied.length && downKind) {
+        reportAiProblem(downKind, result.firstError);
+        const i = genTimes.indexOf(now);
+        if (i !== -1) genTimes.splice(i, 1);
+        return res.status(503).json({ error: STAFF_DOWN_MESSAGE[downKind], code: "unavailable" });
+      }
       if (!result.applied.length) {
         const i = genTimes.indexOf(now); // nothing worked — don't charge the allowance
         if (i !== -1) genTimes.splice(i, 1);
       } else {
         logActivity("package_render", rep, { package: pkg.key, applied: result.applied.length, failed: result.failed.length, concept: cleanConceptId(b.concept) });
       }
-      res.json({ ...result, used: genTimes.length, limit: DAILY_LIMIT });
+      res.json({ image: result.image, applied: result.applied, failed: result.failed, used: genTimes.length, limit: DAILY_LIMIT });
     } finally {
       inFlight -= 1;
     }

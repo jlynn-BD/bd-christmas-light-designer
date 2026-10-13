@@ -211,3 +211,25 @@ export async function sendConceptEmail({ to, customerName, repName, repEmail, pd
     return { ok: false, error: err.message };
   }
 }
+
+/**
+ * Plain operational alert to staff (e.g. "AI credits ran out"). Recipients come from ALERT_EMAIL_TO
+ * (comma-separated; "none" turns sending off). Never throws.
+ */
+export async function sendOpsAlert({ subject, html }) {
+  const raw = process.env.ALERT_EMAIL_TO ?? "jlacano@trustblueduck.com,hello@trustblueduck.com";
+  const to = raw.split(",").map((s) => s.trim()).filter((s) => s && s.toLowerCase() !== "none");
+  if (!to.length) return { ok: false, error: "alerts disabled" };
+  if (!resend) return { ok: false, error: "RESEND_API_KEY not configured" };
+  try {
+    const result = await resend.emails.send({ from: `Blue Duck App Alerts <${FROM_EMAIL}>`, to, subject, html });
+    if (result.error) {
+      console.error("Resend API returned an error sending ops alert:", result.error);
+      return { ok: false, error: result.error };
+    }
+    return { ok: true, id: result.data?.id };
+  } catch (err) {
+    console.error("Failed to send ops alert:", err);
+    return { ok: false, error: err.message };
+  }
+}

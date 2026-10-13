@@ -91,6 +91,8 @@ export async function renderPackage({ editImage, imageBuffer, mimeType, styleKey
   let current = null;
   const applied = [];
   const failed = [];
+  const errorKinds = []; // see classifyAiError() in image-edit.js
+  let firstError = null;
 
   for (const feature of extraFeaturesOf(pkg)) {
     try {
@@ -105,8 +107,10 @@ export async function renderPackage({ editImage, imageBuffer, mimeType, styleKey
       // Keep going with whatever we have so one flaky step doesn't throw away the others.
       console.error(`[package-render] "${feature}" failed:`, err.message);
       failed.push(feature);
+      errorKinds.push(err.kind ?? "other");
+      firstError ??= err.message;
     }
   }
 
-  return { image: current, applied, failed };
+  return { image: current, applied, failed, errorKinds, firstError };
 }

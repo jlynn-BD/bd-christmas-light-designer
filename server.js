@@ -18,7 +18,8 @@ const sharpPromise = import("sharp")
 import { generateLeadPdf } from "./lead-pdf.js";
 import { sendLeadEmail, sendCustomerConfirmationEmail } from "./lead-email.js";
 import { syncLeadToCrm } from "./lead-crm.js";
-import { editImageWithPrompt } from "./image-edit.js";
+import { editImageWithPrompt, SERVICE_DOWN_KINDS } from "./image-edit.js";
+import { reportAiProblem, CUSTOMER_DOWN_MESSAGE } from "./ops-alerts.js";
 import { registerTeamRoutes, teamReportHandler } from "./team.js";
 import { initAnalytics, ingestEvents, reportHandler, adminAuth } from "./analytics.js";
 import { apiGuard, generationGuard, leadsGuard, getClientIp, isAllowlisted, initAbuseGuard } from "./abuse-guard.js";
@@ -432,6 +433,16 @@ app.post("/api/generate-all", generationGuard, upload.single("image"), async (re
       new Promise((r) => setTimeout(r, i * 400)).then(() => generateStyledImage(buffer, mimetype, style.description))
     )
   );
+
+  // If the AI service itself is down (credits used up, key rejected, model retired) every style fails
+  // the same way. Tell the owner, and tell the visitor something clear instead of four "try again" boxes.
+  const failures = settled.filter((s) => s.status === "rejected");
+  const downKind = failures.map((f) => f.reason?.kind).find((k) => SERVICE_DOWN_KINDS.includes(k));
+  if (downKind && failures.length === STYLES.length) {
+    reportAiProblem(downKind, failures[0].reason?.message);
+    req.abuse.refund();
+    return res.status(503).json({ error: CUSTOMER_DOWN_MESSAGE, code: "unavailable" });
+  }
 
   const results = STYLES.map((style, i) => {
     const outcome = settled[i];
