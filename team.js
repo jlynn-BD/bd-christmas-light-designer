@@ -265,7 +265,7 @@ export function registerTeamRoutes(app, { express, upload, STYLES, generateStyle
     genTimes.push(now);
     inFlight += 1;
     try {
-      const result = await renderPackage({ editImage, imageBuffer: Buffer.from(m[2], "base64"), mimeType: m[1], styleKey, pkg });
+      const result = await renderPackage({ editImage, sharp: await sharpPromise, imageBuffer: Buffer.from(m[2], "base64"), mimeType: m[1], styleKey, pkg });
       const downKind = result.errorKinds.find((k) => SERVICE_DOWN_KINDS.includes(k));
       if (!result.applied.length && downKind) {
         reportAiProblem(downKind, result.firstError);

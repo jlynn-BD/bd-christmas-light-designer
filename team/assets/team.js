@@ -240,11 +240,12 @@ function showPicture(src) {
 
 const extrasOf = (pkg) => (pkg ? pkg.features.filter((f) => f !== "Roofline") : []);
 
-function setPackageUi(message, { busy = false, retry = false, isError = false } = {}) {
+function setPackageUi(message, { busy = false, retry = false, retryLabel = "↻ Try adding the package again", isError = false } = {}) {
   pkgBusy = busy;
   $("pkgRenderBox").hidden = !message;
   setStatus($("pkgRenderMsg"), message, isError);
   $("pkgRetryBtn").hidden = !retry;
+  $("pkgRetryBtn").textContent = retryLabel;
   $("decorCanvasWrap").classList.toggle("rendering", busy);
   pdfBtn.disabled = emailBtn.disabled = busy;
 }
@@ -293,7 +294,7 @@ async function renderPackageOnHouse() {
       pkgIncomplete = true;
       setPackageUi(`⚠️ Couldn't add: ${data.failed.join(", ")}. The picture shows ${data.applied.length ? data.applied.join(", ").toLowerCase() : "only the roofline"}.`, { retry: true, isError: true });
     } else {
-      setPackageUi(`✅ ${chosenPackage.name} features added to the house.`);
+      setPackageUi(`✅ ${chosenPackage.name} features added to the house.`, { retry: true, retryLabel: "↻ Not quite right? Create a new version" });
     }
   } catch (err) {
     if (seq !== renderSeq) return;
