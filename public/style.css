@@ -658,6 +658,31 @@ button:not(:disabled):hover {
 .package-hero {
   max-width: 820px;
   margin: 1.5rem auto;
+  position: relative;
+}
+
+/* Numbered callouts on the example picture; colours/numbers come from FEATURE_LEGEND so they match the
+   badges on the package cards below. */
+.hero-badges {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+.hero-badge {
+  position: absolute;
+  transform: translate(-50%, -50%);
+  width: clamp(22px, 4.6vw, 38px);
+  height: clamp(22px, 4.6vw, 38px);
+  border-radius: 50%;
+  border: 2px solid #fff;
+  color: #fff;
+  font-weight: 800;
+  font-size: clamp(12px, 2.5vw, 20px);
+  line-height: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.55);
 }
 
 .package-hero img {

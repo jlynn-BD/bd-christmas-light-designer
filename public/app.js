@@ -604,8 +604,39 @@ function openPackagePanel() {
   packageContinueBtn.disabled = true;
   packageContinueTopBtn.hidden = true;
   packageHeroImg.src = DEFAULT_PACKAGE_HERO_IMAGE;
+  renderHeroBadges(null);
   renderPackageCards();
   showPackage();
+}
+
+// Where each feature sits on the example pictures (all four use the same house), as % of the image.
+// A badge is drawn only for features the selected package includes; with no package chosen yet, the
+// default picture shows every feature, so it shows every badge.
+const HERO_BADGE_POS = {
+  Roofline: { x: 27.5, y: 23 },
+  Wreath: { x: 33, y: 36 },
+  "Trees and Shrubs": { x: 11, y: 40 },
+  "Driveway Stake Lighting": { x: 66, y: 77 },
+  "Sidewalk Stake Lighting": { x: 18, y: 73 },
+};
+
+function renderHeroBadges(pkg) {
+  const box = document.getElementById("packageHeroBadges");
+  if (!box) return;
+  box.innerHTML = "";
+  const features = pkg ? pkg.features : Object.keys(FEATURE_LEGEND);
+  for (const feature of features) {
+    const legend = FEATURE_LEGEND[feature];
+    const pos = HERO_BADGE_POS[feature];
+    if (!legend || !pos) continue;
+    const badge = document.createElement("span");
+    badge.className = "hero-badge";
+    badge.textContent = legend.number;
+    badge.style.backgroundColor = legend.color;
+    badge.style.left = `${pos.x}%`;
+    badge.style.top = `${pos.y}%`;
+    box.appendChild(badge);
+  }
 }
 
 function renderPackageCards() {
@@ -660,6 +691,7 @@ function selectPackage(pkg, card) {
   packageContinueTopBtn.hidden = false;
   packageContinueTopBtn.textContent = `Continue with ${pkg.name} →`;
   if (pkg.heroImage) packageHeroImg.src = pkg.heroImage;
+  renderHeroBadges(pkg);
 
   // On a phone the cards sit below the image, so the new image would change out of sight.
   // Bring it into view, with the Continue button right underneath.
