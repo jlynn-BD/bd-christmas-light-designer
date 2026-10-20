@@ -527,6 +527,31 @@ export async function loadSessions({ range = "30d", device = "all", includeInter
   return { sessions, days };
 }
 
+/**
+ * Customer visits that STARTED between fromMs and toMs (staff testing excluded). Events are read a few
+ * hours past the end of the window so a visit that began at 11:50pm still shows its later steps, but a
+ * visit is counted on the day it started.
+ */
+export async function loadSessionsBetween(fromMs, toMs) {
+  const readUntil = toMs + 6 * 60 * 60 * 1000;
+  let rows;
+  if (dbPool) {
+    const { rows: dbRows } = await dbPool.query(
+      `SELECT session_id, event, props, device, embedded, referrer, internal,
+              (EXTRACT(EPOCH FROM created_at) * 1000)::float8 AS t
+         FROM analytics_events
+        WHERE created_at >= $1 AND created_at < $2
+        ORDER BY created_at
+        LIMIT 300000`,
+      [new Date(fromMs), new Date(readUntil)]
+    );
+    rows = dbRows.map((r) => ({ ...r, t: Number(r.t) }));
+  } else {
+    rows = memoryEvents.filter((r) => r.created_at.getTime() >= fromMs && r.created_at.getTime() < readUntil).map((r) => ({ ...r, t: r.created_at.getTime() }));
+  }
+  return groupSessions(rows).filter((s) => !s.internal && s.ev.app_started && s.ev.app_started.t >= fromMs && s.ev.app_started.t < toMs);
+}
+
 export async function reportHandler(req, res) {
   try {
     const { range = "30d", device = "all", internal = "0" } = req.query;

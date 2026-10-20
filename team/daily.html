@@ -1,0 +1,37 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="robots" content="noindex, nofollow" />
+  <meta name="theme-color" content="#0d1f3a" />
+  <title>Blue Duck — Daily Numbers</title>
+  <link rel="icon" href="/blue-duck-logo.png" />
+  <link rel="stylesheet" href="/style.css" />
+  <link rel="stylesheet" href="/team/assets/team.css" />
+  <link rel="stylesheet" href="/team/assets/daily.css" />
+</head>
+<body class="team-body">
+  <header>
+    <img class="logo" src="/blue-duck-logo.png" alt="Blue Duck Christmas Lights" />
+    <h1>Daily Numbers <span class="internal-badge">Internal</span></h1>
+    <p>How the day is going: customer visits and requests, when they come in, and what the team has produced.</p>
+    <div class="team-bar"><a class="link-btn" href="/team">← Back to the Design Studio</a></div>
+  </header>
+
+  <main class="daily-main">
+    <section class="team-card day-nav">
+      <button type="button" id="prevDay" class="secondary" aria-label="Previous day">◀</button>
+      <input type="date" id="dayInput" aria-label="Pick a day" />
+      <button type="button" id="nextDay" class="secondary" aria-label="Next day">▶</button>
+      <button type="button" id="todayBtn" class="secondary">Today</button>
+      <button type="button" id="refreshBtn" class="secondary">↻ Refresh</button>
+      <p id="dayLabel" class="day-label"></p>
+    </section>
+
+    <div id="content"><p class="empty">Loading…</p></div>
+  </main>
+
+  <script src="/team/assets/daily.js"></script>
+</body>
+</html>

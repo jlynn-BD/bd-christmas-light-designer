@@ -21,6 +21,7 @@ import { syncLeadToCrm } from "./lead-crm.js";
 import { editImageWithPrompt, SERVICE_DOWN_KINDS } from "./image-edit.js";
 import { reportAiProblem, CUSTOMER_DOWN_MESSAGE } from "./ops-alerts.js";
 import { registerTeamRoutes, teamReportHandler } from "./team.js";
+import { registerDailyRoutes } from "./daily.js";
 import { initAnalytics, ingestEvents, reportHandler, adminAuth } from "./analytics.js";
 import { apiGuard, generationGuard, leadsGuard, getClientIp, isAllowlisted, initAbuseGuard } from "./abuse-guard.js";
 
@@ -227,6 +228,9 @@ registerTeamRoutes(app, {
   pool,
   offer: CURRENT_OFFER,
 });
+
+// Staff "daily numbers" page + API (team-session only).
+registerDailyRoutes(app);
 
 // Guards run BEFORE body parsing so a throttled request never costs us the upload/JSON parse.
 // Only /api/leads legitimately carries big payloads (the house photo + rendered design as data URLs);

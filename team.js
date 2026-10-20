@@ -491,6 +491,19 @@ export function buildTeamReport(rows, { now = Date.now(), days = 30, tz = "Ameri
 
 const RANGE_DAYS = { "24h": 1, "7d": 7, "30d": 30, "90d": 90, all: 3650 };
 
+/** Team activity rows ({ event, rep, props, t }) between fromMs and toMs. */
+export async function loadTeamActivity(fromMs, toMs) {
+  if (dbPool) {
+    const r = await dbPool.query(
+      `SELECT event, rep, props, (EXTRACT(EPOCH FROM created_at) * 1000)::float8 AS t
+         FROM team_activity WHERE created_at >= $1 AND created_at < $2 ORDER BY created_at LIMIT 100000`,
+      [new Date(fromMs), new Date(toMs)]
+    );
+    return r.rows.map((x) => ({ ...x, t: Number(x.t) }));
+  }
+  return memoryActivity.filter((x) => x.t >= fromMs && x.t < toMs);
+}
+
 export async function teamReportHandler(req, res) {
   try {
     const days = RANGE_DAYS[String(req.query.range)] ?? 30;

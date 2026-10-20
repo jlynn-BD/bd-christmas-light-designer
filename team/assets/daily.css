@@ -1,0 +1,33 @@
+.daily-main { max-width: 900px; }
+.day-nav { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.day-nav input[type=date] { padding: 0.6rem 0.7rem; font-size: 16px; border-radius: 8px; border: 1px solid #2a4a82; background: #0d1f3a; color: #fff; font-family: inherit; min-height: 44px; }
+.day-label { flex-basis: 100%; margin: 4px 0 0; font-size: 0.95rem; opacity: 0.9; }
+.tiles { display: grid; grid-template-columns: repeat(auto-fit, minmax(135px, 1fr)); gap: 10px; margin: 6px 0 4px; }
+.tile { background: #0f2452; border: 1px solid #2a4a82; border-radius: 12px; padding: 12px; }
+.tile .n { font-size: 1.7rem; font-weight: 700; line-height: 1.1; }
+.tile .l { font-size: 0.8rem; opacity: 0.8; margin-top: 2px; }
+.tile .d { font-size: 0.75rem; margin-top: 4px; opacity: 0.85; }
+.tile .d.up { color: #6fdc9d; } .tile .d.down { color: #ff9a9a; } .tile .d.flat { opacity: 0.6; }
+.follow { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 10px; }
+.follow .tile .n { color: #f5c842; }
+.note { font-size: 0.82rem; opacity: 0.75; margin: 8px 0 0; }
+.chart { display: flex; align-items: flex-end; gap: 3px; height: 130px; margin-top: 12px; }
+.chart .col { flex: 1; min-width: 6px; height: 100%; display: flex; flex-direction: column; justify-content: flex-end; position: relative; }
+.chart .bar { background: #4a8df0; border-radius: 3px 3px 0 0; min-height: 0; }
+.chart .req { background: #4cc38a; position: absolute; left: 0; right: 0; bottom: 0; border-radius: 3px 3px 0 0; }
+.chart .col.now .bar { outline: 2px solid #f5c842; }
+.axis { display: flex; gap: 3px; margin-top: 4px; font-size: 0.68rem; opacity: 0.7; }
+.axis span { flex: 1; text-align: center; min-width: 6px; white-space: nowrap; overflow: visible; }
+.legend { font-size: 0.78rem; opacity: 0.8; margin-top: 6px; }
+.frow { margin: 7px 0; }
+.fhead { display: flex; justify-content: space-between; gap: 8px; font-size: 0.9rem; flex-wrap: wrap; }
+.fhead .num { opacity: 0.8; white-space: nowrap; }
+.track { background: rgba(255,255,255,0.08); border-radius: 6px; height: 16px; margin-top: 3px; overflow: hidden; }
+.fill { height: 100%; background: #4a8df0; border-radius: 6px; min-width: 2px; }
+.fill.done { background: #4cc38a; }
+.insights li { margin: 5px 0; }
+table.reps { width: 100%; border-collapse: collapse; font-size: 0.9rem; margin-top: 8px; }
+table.reps th, table.reps td { text-align: left; padding: 7px 5px; border-bottom: 1px solid #2a4a82; }
+table.reps th { opacity: 0.7; font-weight: 600; font-size: 0.78rem; }
+table.reps .num { text-align: right; }
+.empty { text-align: center; opacity: 0.8; padding: 24px 0; }
