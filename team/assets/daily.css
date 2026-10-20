@@ -16,7 +16,7 @@
 .chart .bar { background: #4a8df0; border-radius: 3px 3px 0 0; min-height: 0; }
 .chart .req { background: #4cc38a; position: absolute; left: 0; right: 0; bottom: 0; border-radius: 3px 3px 0 0; }
 .chart .col.now .bar { outline: 2px solid #f5c842; }
-.axis { display: flex; gap: 3px; margin-top: 4px; font-size: 0.68rem; opacity: 0.7; }
+.axis { display: flex; gap: 3px; margin-top: 4px; font-size: 0.75rem; opacity: 0.75; }
 .axis span { flex: 1; text-align: center; min-width: 6px; white-space: nowrap; overflow: visible; }
 .legend { font-size: 0.78rem; opacity: 0.8; margin-top: 6px; }
 .frow { margin: 7px 0; }

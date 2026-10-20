@@ -1170,3 +1170,180 @@ a,
     inset: -8px;
   }
 }
+
+
+/* ==========================================================================
+   Device polish: tablets, landscape phones, very large screens, keyboards,
+   touch vs. mouse, notches and reduced motion. Kept last so it wins ties.
+   ========================================================================== */
+
+/* Mobile browsers' toolbars make 100vh taller than the visible area; dvh tracks what's really visible. */
+body {
+  min-height: 100vh;
+  min-height: 100dvh;
+}
+
+/* Phones with a notch / rounded corners (the pages ask for viewport-fit=cover). */
+body {
+  padding-left: env(safe-area-inset-left);
+  padding-right: env(safe-area-inset-right);
+  padding-bottom: env(safe-area-inset-bottom);
+}
+.lightbox-close {
+  top: calc(env(safe-area-inset-top, 0px) + 12px);
+  right: calc(env(safe-area-inset-right, 0px) + 12px);
+}
+
+/* Keyboard users (desktops, tablets with keyboards) must be able to see where they are. */
+:focus-visible {
+  outline: 3px solid var(--accent-2);
+  outline-offset: 2px;
+}
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible {
+  outline-offset: 0;
+}
+.package-card:focus-visible,
+.progress-step.completed:focus-visible {
+  outline-offset: 3px;
+  border-radius: 12px;
+}
+
+/* People who ask their device for less motion get none. */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    transition-duration: 0.01ms !important;
+    animation-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* A tap leaves a phone/tablet "hovering" until the next tap — don't leave things stuck raised or glowing. */
+@media (hover: none) {
+  .package-card:hover {
+    transform: none;
+  }
+  .progress-step.completed:hover .step-circle {
+    transform: none;
+    box-shadow: none;
+  }
+  .progress-step.completed:hover .step-name {
+    text-decoration: none;
+  }
+}
+
+/* Readable progress-bar labels (they were 10.9px). Phones keep them compact only on very small screens. */
+@media (min-width: 361px) {
+  .step-name {
+    font-size: 0.75rem;
+  }
+}
+@media (min-width: 641px) {
+  .step-name {
+    font-size: 0.85rem;
+  }
+}
+
+/* Tablets (and anything up to 1024px): comfortable 44px touch targets. Before, only phone widths and
+   "coarse pointer" devices got them, so an iPad with a keyboard/trackpad — or a small laptop window —
+   got phone-sized-or-smaller buttons. */
+@media (max-width: 1024px), (pointer: coarse) {
+  button,
+  select,
+  textarea,
+  .lead-form input,
+  .gate-zip-row input,
+  input[type="text"],
+  input[type="email"],
+  input[type="tel"],
+  input[type="password"],
+  input[type="date"] {
+    min-height: 44px;
+  }
+
+  /* links styled as buttons (e.g. "Daily numbers", "Back to the Design Studio") need to be block-like to take a height */
+  a.link-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 44px;
+    padding: 0.7rem 1rem;
+  }
+
+  /* these small controls keep their own size; they carry enlarged invisible touch areas instead */
+  .decor-remove,
+  .decor-resize-handle {
+    min-width: 0;
+    min-height: 0;
+  }
+}
+
+/* Tablets: use the extra room a little more generously. */
+@media (min-width: 641px) and (max-width: 1024px) {
+  main {
+    padding: 1.75rem 2rem;
+  }
+  header {
+    padding-top: 2.25rem;
+  }
+}
+
+/* Phones held sideways: the full header would fill the whole screen and push the form out of sight. */
+@media (max-height: 520px) and (orientation: landscape) {
+  header {
+    padding: 0.6rem 1rem 0.3rem;
+    gap: 0.25rem;
+  }
+  header img.logo {
+    height: 44px;
+  }
+  header h1 {
+    font-size: 1.25rem;
+  }
+  header p:not(.header-promo) {
+    display: none;
+  }
+  .header-promo {
+    font-size: 0.85rem;
+  }
+  main {
+    padding: 0.75rem 1.25rem 1.25rem;
+    gap: 1rem;
+  }
+  .gate-panel,
+  .controls,
+  .approval-panel,
+  .customize-panel,
+  .package-panel,
+  .lead-panel {
+    padding: 1rem 1.25rem;
+  }
+  .progress-bar {
+    margin-bottom: 0.5rem;
+  }
+}
+
+/* Big monitors: scale everything up with the screen instead of leaving a small island in a wide page. */
+@media (min-width: 1800px) {
+  html {
+    font-size: 112.5%;
+  }
+  main {
+    max-width: 60rem;
+  }
+  header img.logo {
+    height: 6rem;
+  }
+}
+@media (min-width: 2400px) {
+  html {
+    font-size: 125%;
+  }
+}
+
+.package-card .package-badge {
+  font-size: 0.78rem;
+}

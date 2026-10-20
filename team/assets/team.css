@@ -32,3 +32,10 @@
 .team-actions { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 4px; }
 .team-actions button { flex: 1 1 200px; }
 @media (max-width: 640px) { .team-fields { grid-template-columns: 1fr; } }
+
+/* ---- device polish (see the matching block at the end of style.css) ---- */
+.team-card label small { font-size: 0.78rem; }
+.internal-badge { font-size: 0.76rem; }
+@media (min-width: 641px) and (max-width: 1024px) { .team-body main { max-width: none; } }
+@media (min-width: 1800px) { .team-body main, .daily-main { max-width: 56rem; } }
+@media (max-height: 520px) and (orientation: landscape) { .team-bar { margin-top: 4px; } .team-body header p { display: none; } }

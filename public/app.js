@@ -36,6 +36,10 @@ function setProgressStep(stepKey) {
     const completed = i < idx;
     el.classList.toggle("completed", completed);
     el.classList.toggle("active", i === idx);
+    // Completed steps are links back; make them reachable by keyboard too.
+    el.tabIndex = completed ? 0 : -1;
+    if (completed) el.setAttribute("role", "button");
+    else el.removeAttribute("role");
     el.querySelector(".step-circle").textContent = completed ? "✓" : String(i + 1);
   });
 
@@ -166,6 +170,14 @@ function goToStep(stepKey) {
     showPackage();
   }
 }
+
+progressSteps.addEventListener("keydown", (e) => {
+  if (e.key !== "Enter" && e.key !== " ") return;
+  const stepEl = e.target.closest(".progress-step");
+  if (!stepEl || !stepEl.classList.contains("completed")) return;
+  e.preventDefault();
+  goToStep(stepEl.dataset.step);
+});
 
 progressSteps.addEventListener("click", (e) => {
   const stepEl = e.target.closest(".progress-step");
@@ -538,6 +550,13 @@ function renderCards(state) {
     img.alt = `${style.label} preview`;
     img.hidden = true;
     img.addEventListener("click", () => openLightbox(img.src, style.label));
+    img.tabIndex = 0;
+    img.addEventListener("keydown", (e) => {
+      if (e.key === "Enter" || e.key === " ") {
+        e.preventDefault();
+        openLightbox(img.src, style.label);
+      }
+    });
     card.appendChild(img);
 
     const chooseBtn = document.createElement("button");
@@ -678,12 +697,24 @@ function renderPackageCards() {
     card.appendChild(list);
 
     card.addEventListener("click", () => selectPackage(pkg, card));
+    // Reachable and operable from the keyboard, not just a mouse or finger.
+    card.tabIndex = 0;
+    card.setAttribute("role", "button");
+    card.setAttribute("aria-pressed", "false");
+    card.setAttribute("aria-label", `${pkg.name}: ${pkg.features.join(", ")}`);
+    card.addEventListener("keydown", (e) => {
+      if (e.key === "Enter" || e.key === " ") {
+        e.preventDefault();
+        selectPackage(pkg, card);
+      }
+    });
     packageGrid.appendChild(card);
   }
 }
 
 function selectPackage(pkg, card) {
   document.querySelectorAll(".package-card.selected").forEach((el) => el.classList.remove("selected"));
+  document.querySelectorAll(".package-card").forEach((el) => el.setAttribute("aria-pressed", String(el === card)));
   card.classList.add("selected");
   chosenPackage = pkg;
   track("package_selected", { package: pkg.key });
