@@ -9,6 +9,10 @@
 export function classifyAiError(err) {
   const m = String(err?.message ?? err ?? "");
   if (/\b402\b|prepayment credits|credits are depleted/i.test(m)) return "billing";
+  // Google also reports "no paid access" as a 429 that names the Free Tier with "limit: 0" (the paid plan
+  // lapsed, so the project fell back to a free tier where the image model gets no quota) or a per-DAY limit.
+  // Waiting a few seconds never fixes that, so it must not be treated as a temporary rate limit.
+  if (/\b429\b|RESOURCE_EXHAUSTED/i.test(m) && (/limit:\s*0\b/.test(m) || /free[_ ]?tier/i.test(m) && /PerDay|per day/i.test(m))) return "billing";
   if (/\b401\b|\b403\b|API key not valid|PERMISSION_DENIED|UNAUTHENTICATED/i.test(m)) return "auth";
   if (/\b404\b|no longer available|NOT_FOUND/i.test(m)) return "model";
   if (/\b429\b|\b503\b|RESOURCE_EXHAUSTED|UNAVAILABLE/i.test(m)) return "transient";

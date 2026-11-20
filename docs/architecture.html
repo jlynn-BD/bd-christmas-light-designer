@@ -1,0 +1,204 @@
+<title>Christmas Light Designer Stack</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Space+Grotesk:wght@500;700&display=swap">
+<style>
+  /* Layout concept: a vertical stack of layers, top = people, bottom = what ships changes, read like a cross-section of the app.
+     Color tokens: navy ink (brand), duck-gold (the backend, the one emphasized layer), cool grey surfaces, signal green for the delivery chain. */
+  :root {
+    --bg: #f6f7fa;
+    --surface: #ffffff;
+    --surface-2: #eef1f7;
+    --ink: #14213d;
+    --ink-soft: #4b5878;
+    --line: #d5dbe8;
+    --navy: #16305c;
+    --gold: #b88200;
+    --gold-bg: #fff6d9;
+    --gold-line: #e9c654;
+    --green: #1f7a4d;
+    --green-bg: #e4f4ea;
+    --blue: #2455a4;
+    --blue-bg: #e6eefb;
+    --font-display: "Space Grotesk", system-ui, sans-serif;
+    --font-body: "Inter", system-ui, -apple-system, "Segoe UI", sans-serif;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #0e1729; --surface: #15213b; --surface-2: #1b2a4a; --ink: #eef2fb; --ink-soft: #a8b6d4; --line: #2b3d63;
+      --navy: #9db8ee; --gold: #f2c64a; --gold-bg: #2f2a14; --gold-line: #8a7424; --green: #6fd6a0; --green-bg: #12301f; --blue: #8db3f4; --blue-bg: #17284a;
+      color-scheme: dark;
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #0e1729; --surface: #15213b; --surface-2: #1b2a4a; --ink: #eef2fb; --ink-soft: #a8b6d4; --line: #2b3d63;
+    --navy: #9db8ee; --gold: #f2c64a; --gold-bg: #2f2a14; --gold-line: #8a7424; --green: #6fd6a0; --green-bg: #12301f; --blue: #8db3f4; --blue-bg: #17284a;
+    color-scheme: dark;
+  }
+
+  * { box-sizing: border-box; }
+  body {
+    background: var(--bg); color: var(--ink); font-family: var(--font-body); font-size: 15px; line-height: 1.55;
+    padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px));
+    padding-block: 28px 56px;
+  }
+  .wrap { max-width: 980px; margin: 0 auto; }
+  h1, h2, h3 { font-family: var(--font-display); line-height: 1.15; text-wrap: balance; margin: 0; }
+  h1 { font-size: clamp(1.7rem, 4.2vw, 2.5rem); letter-spacing: -0.01em; }
+  h2 { font-size: 1.25rem; margin-bottom: 14px; }
+  h3 { font-size: 1rem; }
+  p { margin: 0; }
+  .eyebrow { font-size: 0.72rem; font-weight: 600; letter-spacing: 0.12em; text-transform: uppercase; color: var(--ink-soft); margin-bottom: 10px; }
+  .lead { color: var(--ink-soft); max-width: 62ch; margin-top: 12px; font-size: 1.05rem; }
+  section { margin-top: 44px; }
+
+  /* ---------- the stack ---------- */
+  .stack { display: flex; flex-direction: column; gap: 0; }
+  .layer { border: 1px solid var(--line); background: var(--surface); border-radius: 12px; padding: 16px 18px 18px; }
+  .layer > .tag { font-size: 0.72rem; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; color: var(--ink-soft); display: flex; justify-content: space-between; gap: 12px; flex-wrap: wrap; margin-bottom: 12px; }
+  .layer > .tag b { color: var(--ink); font-weight: 600; }
+  .row { display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: 10px; }
+  .box { background: var(--surface-2); border: 1px solid var(--line); border-radius: 8px; padding: 10px 12px; min-width: 0; }
+  .box h3 { margin-bottom: 3px; }
+  .box p { font-size: 0.86rem; color: var(--ink-soft); }
+  .box code, .chips span { font-family: ui-monospace, "SF Mono", Menlo, monospace; font-size: 0.8rem; }
+  .chips { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 12px; }
+  .chips span { background: var(--surface); border: 1px solid var(--line); border-radius: 999px; padding: 3px 10px; color: var(--ink-soft); }
+
+  .layer.front { border-left: 4px solid var(--blue); }
+  .layer.front .box { background: var(--blue-bg); border-color: transparent; }
+  .layer.back { border: 2px solid var(--gold-line); background: var(--gold-bg); }
+  .layer.back .box { background: var(--surface); }
+  .layer.back > .tag b { color: var(--gold); }
+  .layer.ext .box { background: var(--surface); }
+  .layer.ext .box h3 { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; }
+  .layer.ext .box h3 small { font-family: var(--font-body); font-size: 0.7rem; font-weight: 500; color: var(--ink-soft); }
+  .layer.ship { border-left: 4px solid var(--green); }
+  .layer.ship .box { background: var(--green-bg); border-color: transparent; }
+
+  .link { display: flex; align-items: center; justify-content: center; gap: 10px; padding: 7px 0; color: var(--ink-soft); font-size: 0.8rem; text-align: center; }
+  .link::before, .link::after { content: ""; width: 1px; height: 22px; background: var(--line); }
+  .link span { padding: 0 2px; }
+  .arrow { color: var(--ink-soft); font-weight: 600; align-self: center; text-align: center; }
+  .chain { display: grid; grid-template-columns: 1fr auto 1fr auto 1fr; gap: 10px; align-items: stretch; }
+  @media (max-width: 640px) { .chain { grid-template-columns: 1fr; } .chain .arrow { transform: rotate(90deg); } }
+
+  /* ---------- table ---------- */
+  .tablewrap { overflow-x: auto; border: 1px solid var(--line); border-radius: 12px; background: var(--surface); }
+  table { border-collapse: collapse; width: 100%; min-width: 640px; font-size: 0.9rem; }
+  th, td { text-align: left; padding: 10px 14px; border-bottom: 1px solid var(--line); vertical-align: top; }
+  th { font-size: 0.72rem; letter-spacing: 0.08em; text-transform: uppercase; color: var(--ink-soft); font-weight: 600; background: var(--surface-2); }
+  tr:last-child td { border-bottom: 0; }
+  td:first-child { font-weight: 600; white-space: nowrap; }
+  .where { font-size: 0.78rem; border-radius: 999px; padding: 2px 9px; white-space: nowrap; background: var(--surface-2); border: 1px solid var(--line); color: var(--ink-soft); }
+
+  ul.notes { padding-left: 1.1rem; margin: 0; display: grid; gap: 8px; }
+  ul.notes li { max-width: 78ch; }
+  footer { margin-top: 44px; color: var(--ink-soft); font-size: 0.82rem; }
+</style>
+
+<div class="wrap">
+  <header>
+    <p class="eyebrow">Blue Duck Christmas Lights</p>
+    <h1>Christmas Light Designer: what it is built with</h1>
+    <p class="lead">One Node.js app on Render serves the customer app, the sales tool and the dashboards. It calls one AI service for the pictures and four others for data, email and the CRM.</p>
+  </header>
+
+  <section aria-labelledby="stackh">
+    <h2 id="stackh">The stack, top to bottom</h2>
+
+    <div class="stack">
+      <div class="layer">
+        <div class="tag"><b>Who uses it</b><span>any phone, tablet or computer</span></div>
+        <div class="row">
+          <div class="box"><h3>Customers</h3><p>Public design flow at the root address. Embedded on the WordPress site in an iframe.</p></div>
+          <div class="box"><h3>Sales team</h3><p>Design Studio at <code>/team</code> and daily numbers at <code>/team/daily</code>. Shared team password.</p></div>
+          <div class="box"><h3>Owner and staff</h3><p>Analytics dashboard at <code>/admin</code>. Separate shared password.</p></div>
+        </div>
+      </div>
+
+      <div class="link"><span>HTTPS, through Cloudflare (Render's front door)</span></div>
+
+      <div class="layer front">
+        <div class="tag"><b>Front end</b><span>runs in the visitor's browser</span></div>
+        <div class="row">
+          <div class="box"><h3>HTML, CSS, JavaScript</h3><p>Plain files, no framework and no build step. Express serves them as they are.</p></div>
+          <div class="box"><h3>Browser features</h3><p>Canvas shrinks photos and draws the decorations. <code>postMessage</code> talks to the WordPress page.</p></div>
+          <div class="box"><h3>Address lookup</h3><p>Nominatim (OpenStreetMap) suggests addresses, called straight from the browser. Free, no key.</p></div>
+        </div>
+      </div>
+
+      <div class="link"><span>JSON and photo uploads to the app's own API</span></div>
+
+      <div class="layer back">
+        <div class="tag"><b>Back end</b><span>Render web service, one always-on instance</span></div>
+        <div class="row">
+          <div class="box"><h3>Node.js + Express</h3><p>One app, ES modules. Routes for the customer flow, <code>/team</code> and <code>/admin</code>.</p></div>
+          <div class="box"><h3>Safeguards</h3><p>Per-visitor and daily limits on AI use, a spam trap on forms, and an email alert if Google stops answering.</p></div>
+          <div class="box"><h3>Files and images</h3><p>Photos resized with <code>sharp</code>, PDFs built with <code>pdfkit</code>, uploads read with <code>multer</code>.</p></div>
+        </div>
+        <div class="chips" aria-label="Libraries"><span>@google/genai</span><span>pg</span><span>resend</span><span>sharp</span><span>pdfkit</span><span>multer</span><span>dotenv</span></div>
+      </div>
+
+      <div class="link"><span>Server-side calls with secret keys kept in Render's settings</span></div>
+
+      <div class="layer ext">
+        <div class="tag"><b>Outside services</b><span>the app never exposes these keys to the browser</span></div>
+        <div class="row">
+          <div class="box"><h3>Google Gemini <small>AI</small></h3><p>Model <code>gemini-2.5-flash-image</code> draws the lit-house pictures. Paid from prepaid credits.</p></div>
+          <div class="box"><h3>Neon Postgres <small>database</small></h3><p>Leads, analytics events, team activity and rate-limit history.</p></div>
+          <div class="box"><h3>Resend <small>email</small></h3><p>Lead notices, customer confirmations, sales concepts with PDFs, owner alerts.</p></div>
+          <div class="box"><h3>GoHighLevel <small>CRM</small></h3><p>A contact and a note for each lead and each sales concept.</p></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section aria-labelledby="shiph">
+    <h2 id="shiph">How a change goes live</h2>
+    <div class="layer ship">
+      <div class="tag"><b>Delivery</b><span>no manual deploy step</span></div>
+      <div class="chain">
+        <div class="box"><h3>Claude Code</h3><p>Writes and tests the code on the developer's computer.</p></div>
+        <div class="arrow" aria-hidden="true">&rarr;</div>
+        <div class="box"><h3>GitHub</h3><p>Repository <code>jlynn-BD/bd-christmas-light-designer</code>, branch <code>main</code>.</p></div>
+        <div class="arrow" aria-hidden="true">&rarr;</div>
+        <div class="box"><h3>Render</h3><p>Rebuilds and restarts the app on every push to <code>main</code>.</p></div>
+      </div>
+      <div class="chips"><span>Secrets live only in Render's Environment tab</span><span>GoDaddy DNS verifies the email domain for Resend</span></div>
+    </div>
+  </section>
+
+  <section aria-labelledby="toolh">
+    <h2 id="toolh">Tool by tool</h2>
+    <div class="tablewrap">
+      <table>
+        <thead><tr><th>Tool</th><th>What it does here</th><th>Called from</th></tr></thead>
+        <tbody>
+          <tr><td>Render</td><td>Hosts the whole app. Starter plan, $7 per month, one instance that does not sleep.</td><td><span class="where">hosting</span></td></tr>
+          <tr><td>GitHub</td><td>Holds the code and triggers each deploy.</td><td><span class="where">development</span></td></tr>
+          <tr><td>Node.js + Express</td><td>The server: pages, API, passwords, usage limits, and background work such as PDFs and emails after a request finishes.</td><td><span class="where">Render</span></td></tr>
+          <tr><td>Google Gemini API</td><td>Generates four colour styles per photo, and adds package extras such as wreaths and tree lights.</td><td><span class="where">server</span></td></tr>
+          <tr><td>Neon Postgres</td><td>Stores leads (with their photos), journey analytics, team activity and recent AI usage per visitor.</td><td><span class="where">server</span></td></tr>
+          <tr><td>Resend</td><td>Sends every email from <code>christmaslead@trustblueduck.com</code>.</td><td><span class="where">server</span></td></tr>
+          <tr><td>GoHighLevel API v2</td><td>Creates or updates CRM contacts and adds notes, with tags that separate customers from sales-rep concepts.</td><td><span class="where">server</span></td></tr>
+          <tr><td>sharp</td><td>Converts AI pictures to JPEG (about 7 times smaller) and checks uploads.</td><td><span class="where">server</span></td></tr>
+          <tr><td>pdfkit</td><td>Builds the lead summary PDF and the customer-facing concept PDF.</td><td><span class="where">server</span></td></tr>
+          <tr><td>Nominatim</td><td>Address suggestions in the lead form.</td><td><span class="where">browser</span></td></tr>
+          <tr><td>WordPress</td><td>The main website, which embeds the customer app and resizes the frame to fit.</td><td><span class="where">iframe</span></td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section aria-labelledby="noteh">
+    <h2 id="noteh">Worth raising in the meeting</h2>
+    <ul class="notes">
+      <li><b>One instance.</b> Usage limits are kept in memory and mirrored to Postgres, so running several instances would need shared state such as Redis.</li>
+      <li><b>Model lifetime.</b> Google retires older Gemini models over time; the image model name is one line to change when that happens.</li>
+      <li><b>Accounts.</b> The team and admin areas use shared passwords, not individual logins.</li>
+      <li><b>Address lookup.</b> Nominatim is a free service with fair-use limits; a paid address API would replace it at higher volume.</li>
+    </ul>
+  </section>
+
+  <footer>Prepared for the engineering review. The diagram shows the app as deployed on Render.</footer>
+</div>

@@ -14,10 +14,10 @@ const escapeHtml = (s) => String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&a
 const PROBLEMS = {
   billing: {
     subject: "⚠️ Blue Duck app: AI credits are used up — design generation is DOWN",
-    what: "Google says the prepaid credits on the Gemini API account are depleted (error 402). Nobody can generate designs right now — customers on the public app and the sales team in the Design Studio all get errors.",
+    what: "Google is refusing every image request because the Gemini API account has no paid access: either the prepaid credits are used up (error 402) or the project has dropped back to the Free Tier, where the image model has no quota (error 429 mentioning the Free Tier). Nobody can generate designs right now — customers on the public app and the sales team in the Design Studio all get errors.",
     fix: [
       'Go to <a href="https://ai.studio/projects">https://ai.studio/projects</a> and sign in with the Google account that owns the API key.',
-      "Open the project the key belongs to and add credits under billing (or switch on billing).",
+      "Open the project the key belongs to (named Christmas light), go to Billing, and buy credits or switch the project back to a paid plan.",
       "Generation starts working again within a minute — no redeploy needed.",
       "Tip: set a spending limit or low-balance alert there so you hear about it before customers do.",
     ],
